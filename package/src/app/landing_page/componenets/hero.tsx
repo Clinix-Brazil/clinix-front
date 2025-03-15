@@ -81,7 +81,7 @@ const LandingPage = () => {
       component={Link}
       href="/authentication/register"
     >
-      Comece Agora
+      Cadastrar
     </Button>
   </Container>
 </Box>
@@ -151,7 +151,7 @@ const LandingPage = () => {
             component={Link}
             href="/authentication/register"
           >
-            Cadastrar Agora
+            Cadastrar
           </Button>
           <Button variant="outlined" color="primary" sx={{ mx: 2, px: 4, py: 2, fontSize: '1.1rem' }}>
             Entrar em contato
