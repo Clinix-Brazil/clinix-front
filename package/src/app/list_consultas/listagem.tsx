@@ -220,7 +220,7 @@ const ListagemConsultas = () => {
             doctorId: parseInt(selectedMedico), // doctorId is a number
             patientId: parseInt(selectedPaciente), //  Adicionado
             dateTime: formattedDateTime, // dateTime is a string in "yyyy-MM-dd HH:mm:ss" format
-            status: "PENDING"  // Must match one of the enum values
+            status: "PENDENTE"  // Must match one of the enum values
         };
 
         try {
