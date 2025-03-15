@@ -38,12 +38,13 @@ export const DELETE_CLINICA = (id: number) => `${BASE_URL + PORT_CLINIC + CLINIC
 export const BUSCAR_CLINICA = (id: number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/clinicas/${id}`;
 
 //Vinculos de Clinica
-export const SOLICITACOES_VINCULO = (c_id:number) => `${BASE_URL + PORT_CLINIC}/vinculos/solicitacoes/${c_id}`;
-export const ATIVOS_VINCULO = (c_id:number) => `${BASE_URL + PORT_CLINIC}/vinculos/${c_id}`;
-export const SOLICITAR_VINCULO = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC}/vinculos/solicitar/${c_id}/${m_id}`;
-export const RECUSAR_VINCULO = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC}/vinculos/recusar/${c_id}/${m_id}`;
-export const VINCULAR_CLINICA = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC}/vinculos/vincular/${c_id}/${m_id}`;
-export const DESVINCULAR_CLINICA = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC}/vinculos/desvincular/${c_id}/${m_id}`;
+export const SOLICITACOES_VINCULO = (c_id:number | null) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/solicitacoes/${c_id}`;
+export const ATIVOS_VINCULO = (c_id:number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/${c_id}`;
+export const SOLICITAR_VINCULO = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/solicitar/${c_id}/${m_id}`;
+export const RECUSAR_VINCULO = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/recusar/${c_id}/${m_id}`;
+export const ACEITAR_VINCULO = (c_id:number, m_id:number | null) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/vincular/${c_id}/${m_id}`;
+export const VINCULAR_CLINICA = (c_id:number, m_id:number | null) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/vincular/${c_id}/${m_id}`;
+export const DESVINCULAR_CLINICA = (c_id:number, m_id:number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/vinculos/desvincular/${c_id}/${m_id}`;
 
 
 //Agendamentos

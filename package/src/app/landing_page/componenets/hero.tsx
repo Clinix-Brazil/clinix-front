@@ -3,14 +3,6 @@
 import { Box, Button, Container, Grid, Typography, Avatar, useMediaQuery } from '@mui/material';
 import Link from "next/link";
 import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
-import Timeline from '@mui/lab/Timeline/Timeline';
-import timelineOppositeContentClasses from '@mui/lab/TimelineOppositeContent/timelineOppositeContentClasses';
-import TimelineItem from '@mui/lab/TimelineItem/TimelineItem';
-import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent/TimelineOppositeContent';
-import TimelineSeparator from '@mui/lab/TimelineSeparator/TimelineSeparator';
-import TimelineDot from '@mui/lab/TimelineDot/TimelineDot';
-import TimelineConnector from '@mui/lab/TimelineConnector/TimelineConnector';
-import TimelineContent from '@mui/lab/TimelineContent/TimelineContent';
 import { useTheme } from '@mui/material/styles';
 import Image from 'next/image'; // Importe o componente Image
 
@@ -45,13 +37,13 @@ const LandingPage = () => {
 >
   <Container sx={{ position: 'relative', zIndex: 1 }}>
     <Image
-      src="/images/logos/dark-logo.svg" // Caminho para o SVG
-      alt="Clinix Logo" // Texto alternativo para acessibilidade
-      width={200} // Defina a largura desejada
-      height={50} // Defina a altura desejada
+      src="/images/logos/dark-logo.svg"
+      alt="Clinix Logo"
+      width={200}
+      height={50}
       style={{
-        maxWidth: '100%', // Garante que a imagem não ultrapasse o container
-        height: 'auto', // Mantém a proporção da imagem
+        maxWidth: '100%',
+        height: 'auto',
       }}
     />
     <Typography
@@ -63,7 +55,7 @@ const LandingPage = () => {
         fontSize: isSmallScreen ? '1.2rem' : '1.5rem',
       }}
     >
-      Sua ferramenta para saúde e gestão.
+      Sua ferramenta de gestão de saúde.
     </Typography>
     <Button
       variant="contained"

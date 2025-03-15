@@ -3,23 +3,20 @@ import { Box, Typography, styled } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import Image from 'next/image';
 
-// No styled components here, since it's just basic positioning
-
 const Dashboard = () => {
     return (
         <PageContainer title="Clinix" description="Sua ferramenta de gestão de saúde">
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {/* Image positioned as the first element */}
-                <Box sx={{ marginBottom: 2 }}> {/* Adjust margin as needed */}
+                <Box sx={{ marginBottom: 2 }}>
                     <Image
                         src="/images/logos/medicos.webp"
                         alt="Medicos"
-                        width={300} // Or whatever the actual image width is
-                        height={50}  // Or whatever the actual image height is
+                        width={300}
+                        height={50}
                         style={{
-                            maxWidth: '100%', // Ensures it doesn't overflow the container
-                            height: 'auto',   // Maintains aspect ratio
-                            display: 'block',  // Removes extra space below the image
+                            maxWidth: '100%',
+                            height: 'auto',
+                            display: 'block',
                             borderRadius: '50%'
                         }}
                     />
@@ -27,7 +24,18 @@ const Dashboard = () => {
 
                 <Typography variant="h1" sx={{ fontWeight: 700, fontSize: '3rem', marginBottom: 2, color: 'primary.main' }}>Clinix</Typography>
                 <Typography variant="h1" sx={{ fontSize: '1.5rem', marginBottom: 4, color: 'text.secondary' }}>Sua ferramenta de gestão de saúde</Typography>
-                <Typography variant="h6" sx={{ fontSize: '1rem', marginBottom: 4, color: 'text.secondary' }}>Utilize os menus ao lado para navegar pelos módulos do sistema</Typography>
+                <Typography
+                    variant="h6"
+                    sx={{
+                        fontSize: '1rem',
+                        marginBottom: 4,
+                        color: 'primary.main',
+                        fontWeight: 500,
+                        textShadow: '0.5px 0.5px 1px rgba(0, 0, 0, 0.1)'
+                    }}
+                >
+                    Utilize os menus ao lado para navegar pelos módulos do sistema.
+                </Typography>
                 <Typography variant="body1" sx={{ fontSize: '1rem', color: 'text.secondary', marginBottom: 4 }}>
                     Clinix auxilia na sua gestão de saúde:
                 </Typography>

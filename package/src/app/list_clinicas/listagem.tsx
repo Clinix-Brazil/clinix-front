@@ -13,14 +13,19 @@ import {
     Select,
     MenuItem,
     InputLabel,
-    FormControl
+    FormControl,
+    Grid,
+    Tabs,
+    Tab,
+    SelectChangeEvent,
 } from '@mui/material';
 import DashboardCard from '@/app/(DashboardLayout)//components/shared/DashboardCard';
 import { useEffect, useState } from 'react';
-import { Delete, Edit, Add, VisibilityOff } from '@mui/icons-material';
-import { LIST_CLINICA, UPDATE_CLINICA, DELETE_CLINICA, CREATE_CLINICA } from '../APIroutes';
-import { Clinica } from '../interfaces';
+import { Delete, Edit, Add, Link, Event, Check, Close } from '@mui/icons-material'; // Importe os ícones Check e Close
+import { LIST_CLINICA, UPDATE_CLINICA, DELETE_CLINICA, CREATE_CLINICA, LIST_PACIENTE, LIST_MEDICO, LIST_GERENTE, SOLICITAR_VINCULO, SOLICITACOES_VINCULO, ACEITAR_VINCULO, RECUSAR_VINCULO, VINCULAR_CLINICA } from '../APIroutes';
+import { Clinica, Gerente, Medico, Paciente, Solicitacao } from '../interfaces';
 import { useTheme } from '@mui/material/styles';
+import Image from 'next/image';
 
 // Estilização para a linha da tabela com hover
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -42,6 +47,9 @@ const tiposClinica = [
 interface NewClinica extends Omit<Clinica, 'id'> {
     tipo: string;
     gerenteId: number;
+    medicos: number[];
+    gerentes: number[];
+    pacientes: number[];
 }
 
 const ListagemClinicas = () => {
@@ -54,6 +62,18 @@ const ListagemClinicas = () => {
     const [clinicaDelete, setClinicaDelete] = useState<Clinica | null>(null);
     const [openClinicDetails, setOpenClinicDetails] = useState(false);
     const [selectedClinicDetails, setSelectedClinicDetails] = useState<Clinica | null>(null);
+    const [openVinculos, setOpenVinculos] = useState(false); // Estado para o modal de vínculos
+    const [tabValue, setTabValue] = useState(0); // Estado para controlar a aba ativa
+
+    const [gerentes, setGerentes] = useState<Gerente[]>([]);
+    const [medicos, setMedicos] = useState<Medico[]>([]);
+    const [pacientes, setPacientes] = useState<Paciente[]>([]);
+    const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
+
+    const [selectedGerente, setSelectedGerente] = useState<number | null>(null);
+    const [selectedMedico, setSelectedMedico] = useState<number | null>(null);
+    const [selectedPaciente, setSelectedPaciente] = useState<number | null>(null);
+    const [selectedSolicitacao, setSelectedSolicitacao] = useState<number | null>(null);
 
     const [openAdd, setOpenAdd] = useState(false);
     const [newClinica, setNewClinica] = useState<NewClinica>({
@@ -64,6 +84,9 @@ const ListagemClinicas = () => {
         horarioFechamento: '',
         tipo: 'CLINICA_GERAL', // Valor padrão para o tipo
         gerenteId: 1, // Valor padrão para o ID do gerente
+        medicos: [] as number[],
+        gerentes: [] as number[],
+        pacientes: [] as number[],
     });
 
     useEffect(() => {
@@ -99,7 +122,7 @@ const ListagemClinicas = () => {
             )
                 .then((response) => response.json())
                 .then((updatedClinica) => {
-                    setClinicas(prevClinicas => 
+                    setClinicas(prevClinicas =>
                         prevClinicas.map((clinica) =>
                             clinica.id === updatedClinica.id ? updatedClinica : clinica
                         )
@@ -151,6 +174,9 @@ const ListagemClinicas = () => {
                 horarioFechamento: '',
                 tipo: 'CLINICA_GERAL',
                 gerenteId: 1,
+                medicos: [] as number[],
+                gerentes: [] as number[],
+                pacientes: [] as number[],
             });
     };
 
@@ -168,6 +194,138 @@ const ListagemClinicas = () => {
                 handleCloseAddModal();
             })
             .catch(error => console.error('Erro ao adicionar clínica:', error));
+    };
+
+    const handleOpenVinculosModal = () => {
+        // Carrega os dados dos usuários quando o modal é aberto
+        Promise.all([
+            fetch(LIST_GERENTE()).then(response => response.json()),
+            fetch(LIST_MEDICO()).then(response => response.json()),
+            fetch(LIST_PACIENTE()).then(response => response.json()),
+            fetch(SOLICITACOES_VINCULO(selectedClinicDetails!.id)).then(response => response.json()),
+        ])
+            .then(([gerentesData, medicosData, pacientesData, vinculosData]) => {
+                setGerentes(gerentesData);
+                setMedicos(medicosData);
+                setPacientes(pacientesData);
+                setSolicitacoes(vinculosData);
+                setOpenVinculos(true);
+            })
+            .catch(error => console.error('Erro ao buscar dados de usuários:', error));
+    };
+
+    const handleCloseVinculosModal = () => {
+        setOpenVinculos(false);
+    };
+
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setTabValue(newValue);
+    };
+
+    const handleGerenteChange = (event: SelectChangeEvent<number>) => {
+        setSelectedGerente(event.target.value as number);
+    };
+
+    const handleMedicoChange = (event: SelectChangeEvent<number>) => {
+        setSelectedMedico(event.target.value as number);
+    };
+
+    const handlePacienteChange = (event: SelectChangeEvent<number>) => {
+        setSelectedPaciente(event.target.value as number);
+    };
+
+    const handleSolicitacaoChange = (event: SelectChangeEvent<number>) => {
+        setSelectedSolicitacao(event.target.value as number);
+    }
+
+    const handleAceitarVinculo = (solicitacao: Solicitacao) => {
+        console.log(solicitacao);
+        const clinicaId = selectedClinicDetails!.id;  // Garante que selectedClinicDetails existe
+
+        fetch(ACEITAR_VINCULO(clinicaId, solicitacao.medicoId), {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao aceitar vínculo');
+                }
+                // Atualizar a lista de solicitações após a aceitação
+                setSolicitacoes(prevSolicitacoes =>
+                    prevSolicitacoes.filter(s => s.id !== solicitacao.id)
+                );
+            })
+            .catch(error => console.error('Erro ao aceitar vínculo:', error));
+    };
+
+    const handleRecusarVinculo = (solicitacao: Solicitacao) => {
+        console.log(solicitacao);
+        const clinicaId = selectedClinicDetails!.id;  // Garante que selectedClinicDetails existe
+        console.log(clinicaId);
+        fetch(RECUSAR_VINCULO(clinicaId, solicitacao.medicoId), {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao recusar vínculo');
+                }
+                // Atualizar a lista de solicitações após a recusa
+                setSolicitacoes(prevSolicitacoes =>
+                    prevSolicitacoes.filter(s => s.id !== solicitacao.id)
+                );
+            })
+            .catch(error => console.error('Erro ao recusar vínculo:', error));
+    };
+
+    const handleSaveVinculos = () => {
+        if (selectedClinicDetails) {
+            let selectedId: number | null = null;
+            switch (tabValue) {
+                case 0: // Gerentes
+                    selectedId = selectedGerente;
+                    break;
+                case 1: // Medicos
+                    selectedId = selectedMedico;
+                    break;
+                case 2: // Pacientes
+                    selectedId = selectedPaciente;
+                    break;
+                default:
+                    break;
+            }
+
+            const requestBody = {
+                clinicaId: selectedClinicDetails.id,
+                usuarioId: selectedId,
+            };
+
+            fetch(VINCULAR_CLINICA(requestBody.clinicaId, requestBody.usuarioId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            })
+                .then(response => response.json())
+                .then(updatedClinica => {
+                    // Atualizar a clínica no estado local
+                    setClinicas(prevClinicas =>
+                        prevClinicas.map(clinica =>
+                            clinica.id === updatedClinica.id ? updatedClinica : clinica
+                        )
+                    );
+                    // Fechar o modal
+                    handleCloseVinculosModal();
+                })
+                .catch(error => console.error('Erro ao atualizar vínculos da clínica:', error));
+        }
     };
 
     return (
@@ -234,51 +392,203 @@ const ListagemClinicas = () => {
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: 400,
+                            width: '60%', // Ocupa 60% da tela
+                            height: '70%', // Ocupa 70% da tela
                             bgcolor: theme.palette.background.paper,
-                            border: `2px solid ${theme.palette.primary.main}`,
+                            border: `1px solid ${theme.palette.divider}`, // Borda mais suave
                             borderRadius: '8px',
                             boxShadow: theme.shadows[5],
                             p: 4,
+                            display: 'flex',
+                            flexDirection: 'column', // Garante que os botões fiquem abaixo das informações
                         }}>
-                            <Typography id='modal-modal-title' variant='h6' component='h2' mb={2} textAlign='center'>
-                                Detalhes da Clínica
-                            </Typography>
                             {selectedClinicDetails && (
-                                <Table aria-label='clinic details table'>
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell component='th' scope='row'>Nome:</TableCell>
-                                            <TableCell>{selectedClinicDetails.nomeFantasia}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component='th' scope='row'>CNPJ:</TableCell>
-                                            <TableCell>{selectedClinicDetails.cnpj}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component='th' scope='row'>Telefone:</TableCell>
-                                            <TableCell>{selectedClinicDetails.telefone}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component='th' scope='row'>Horário de Abertura:</TableCell>
-                                            <TableCell>{selectedClinicDetails.horarioAbertura}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component='th' scope='row'>Horário de Fechamento:</TableCell>
-                                            <TableCell>{selectedClinicDetails.horarioFechamento}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component='th' scope='row'>Tipo:</TableCell>
-                                            <TableCell>{selectedClinicDetails.tipo}</TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
+                                <>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sx={{ textAlign: 'center', mb: 2 }}>
+                                            <Typography variant='h4'>
+                                            Detalhes da clínica: <br />
+                                            </Typography>
+                                            <Typography variant='h4' fontWeight='bold'>
+                                            {selectedClinicDetails.nomeFantasia}
+                                            </Typography>
+                                            <br />
+                                        </Grid>
+
+                                        <Grid item xs={12} md={6} sx={{ textAlign: 'center' }}>
+                                            {/*  Componente de imagem */}
+                                            <Image
+                                                src="/images/logos/medicos.webp" // Substitua pelo caminho da sua imagem estática
+                                                alt="Imagem da Clínica"
+                                                width={300}
+                                                height={200}
+                                                style={{
+                                                    maxWidth: '100%',
+                                                    height: 'auto',
+                                                    borderRadius: '8px',
+                                                }}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} md={6}>
+                                            {/* Informações da clínica formatadas */}
+                                            <Box>
+                                                <Typography variant="subtitle2" fontWeight="bold">CNPJ:</Typography>
+                                                <Typography variant="body2">{selectedClinicDetails.cnpj}</Typography>
+                                            </Box>
+                                            <Box mt={2}>
+                                                <Typography variant="subtitle2" fontWeight="bold">Telefone:</Typography>
+                                                <Typography variant="body2">{selectedClinicDetails.telefone}</Typography>
+                                            </Box>
+                                            <Box mt={2}>
+                                                <Typography variant="subtitle2" fontWeight="bold">Horário de Abertura:</Typography>
+                                                <Typography variant="body2">{selectedClinicDetails.horarioAbertura}</Typography>
+                                            </Box>
+                                            <Box mt={2}>
+                                                <Typography variant="subtitle2" fontWeight="bold">Horário de Fechamento:</Typography>
+                                                <Typography variant="body2">{selectedClinicDetails.horarioFechamento}</Typography>
+                                            </Box>
+                                            <Box mt={2}>
+                                                <Typography variant="subtitle2" fontWeight="bold">Tipo:</Typography>
+                                                <Typography variant="body2">{selectedClinicDetails.tipo}</Typography>
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
+
+                                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-around' }}>
+                                        <Button variant="contained" color="primary" startIcon={<Link />} onClick={handleOpenVinculosModal}>
+                                            Gerenciar vínculos
+                                        </Button>
+                                        <Button variant="contained" color="primary" startIcon={<Event />}>
+                                            Solicitar agendamento
+                                        </Button>
+                                    </Box>
+                                </>
                             )}
-                            <Box display='flex' justifyContent='center'>
-                                <Button onClick={handleCloseClinicDetails} sx={{ mt: 3 }} variant='outlined'>Fechar</Button>
+                            <br />
+                            <Box display='flex' justifyContent='center' mt={3}>
+                                <Button onClick={handleCloseClinicDetails} variant='outlined'>Fechar</Button>
                             </Box>
                         </Box>
                     </Modal>
+
+                    {/* Modal de Gerenciar Vínculos */}
+                    <Modal open={openVinculos} onClose={handleCloseVinculosModal}>
+                        <Box sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '60%', // Ajuste o tamanho conforme necessário
+                            height: '70%',
+                            bgcolor: theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: '8px',
+                            boxShadow: theme.shadows[5],
+                            p: 4,
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}>
+                            <Typography variant="h6" gutterBottom>
+                                Gerenciando vínculos de: {selectedClinicDetails?.nomeFantasia}
+                            </Typography>
+                            <Tabs value={tabValue} onChange={handleTabChange} aria-label="abas de vínculos">
+                                <Tab label="Gerentes" />
+                                <Tab label="Médicos" />
+                                <Tab label="Pacientes" />
+                                <Tab label="Solicitações" />
+                            </Tabs>
+                            <Box mt={2}>
+                                {tabValue === 0 && (
+                                    <FormControl fullWidth>
+                                        <InputLabel id="gerente-select-label">Selecionar Gerente</InputLabel>
+                                        <Select
+                                            labelId="gerente-select-label"
+                                            id="gerente-select"
+                                            value={selectedGerente || ''}
+                                            label="Selecionar Gerente"
+                                            onChange={handleGerenteChange}
+                                        >
+                                            {gerentes.map((gerente) => (
+                                                <MenuItem key={gerente.id} value={gerente.id}>{gerente.nome}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                )}
+                                {tabValue === 1 && (
+                                    <FormControl fullWidth>
+                                        <InputLabel id="medico-select-label">Selecionar Médico</InputLabel>
+                                        <Select
+                                            labelId="medico-select-label"
+                                            id="medico-select"
+                                            value={selectedMedico || ''}
+                                            label="Selecionar Médico"
+                                            onChange={handleMedicoChange}
+                                        >
+                                            {medicos.map((medico) => (
+                                                <MenuItem key={medico.id} value={medico.id}>{medico.nome}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                )}
+                                {tabValue === 2 && (
+                                    <FormControl fullWidth>
+                                        <InputLabel id="paciente-select-label">Selecionar Paciente</InputLabel>
+                                        <Select
+                                            labelId="paciente-select-label"
+                                            id="paciente-select"
+                                            value={selectedPaciente || ''}
+                                            label="Selecionar Paciente"
+                                            onChange={handlePacienteChange}
+                                        >
+                                            {pacientes.map((paciente) => (
+                                                <MenuItem key={paciente.id} value={paciente.id}>{paciente.nome}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                )}
+                                {tabValue === 3 && (
+                                    <Box sx={{ overflow: 'auto' }}>
+                                        <Table aria-label="Solicitações de Vínculo">
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>ID</TableCell>
+                                                    {/* <TableCell>Usuário</TableCell> */}
+                                                    <TableCell>Ações</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {solicitacoes && Array.isArray(solicitacoes) ? (
+                                                    solicitacoes.map((solicitacao) => (
+                                                        <TableRow key={solicitacao.id}>
+                                                            <TableCell>{solicitacao.id}</TableCell>
+                                                           {/*  <TableCell>{solicitacao.userId}</TableCell> */}
+                                                            <TableCell>
+                                                                <IconButton color="success" aria-label="Aceitar" onClick={() => handleAceitarVinculo(solicitacao)}>
+                                                                    <Check />
+                                                                </IconButton>
+                                                                <IconButton color="error" aria-label="Recusar" onClick={() => handleRecusarVinculo(solicitacao)}>
+                                                                    <Close />
+                                                                </IconButton>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={2}>Nenhuma solicitação encontrada</TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </Box>
+                                )}
+                            </Box>
+                            <Box mt={3} display="flex" justifyContent="space-between">
+                                <Button onClick={handleCloseVinculosModal} variant="outlined">Fechar</Button>
+                            </Box>
+                        </Box>
+                    </Modal>
+
                     {/* Modal de Edição */}
                     <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
                         <Box
@@ -323,10 +633,7 @@ const ListagemClinicas = () => {
                                         label='telefone'
                                         value={clinicaEdit.telefone}
                                         onChange={(e) =>
-                                            setClinicaEdit({
-                                                ...clinicaEdit,
-                                                telefone: e.target.value,
-                                            })
+                                            setClinicaEdit({ ...clinicaEdit, telefone: e.target.value })
                                         }
                                     />
                                     <TextField
@@ -347,7 +654,7 @@ const ListagemClinicas = () => {
                                             setClinicaEdit({ ...clinicaEdit, horarioFechamento: e.target.value })
                                         }
                                     />
-                                     <FormControl fullWidth margin="dense">
+                                    <FormControl fullWidth margin="dense">
                                         <InputLabel id="tipo-clinica-label">Tipo de Clínica</InputLabel>
                                         <Select
                                             labelId="tipo-clinica-label"
@@ -493,7 +800,7 @@ const ListagemClinicas = () => {
                                     ))}
                                 </Select>
                             </FormControl>
-
+                            
                             <TextField
                                 fullWidth
                                 margin='dense'
