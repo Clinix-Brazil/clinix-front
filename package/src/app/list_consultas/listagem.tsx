@@ -16,8 +16,6 @@ import {
     FormControl,
     InputLabel,
     styled,
-    FormControlLabel,
-    Switch
 } from "@mui/material";
 import { Edit, Delete, AccessTime, Add } from "@mui/icons-material";
 import DashboardCard from "@/app/(DashboardLayout)//components/shared/DashboardCard";
@@ -25,12 +23,17 @@ import {
     CREATE_AGENDAMENTO,
     LIST_AGENDAMENTO,
     UPDATE_AGENDAMENTO,
-    DELETE_AGENDAMENTO
+    DELETE_AGENDAMENTO,
+    LIST_CLINICA,
+    LIST_MEDICO,
+    LIST_PACIENTE // Adicionado
 } from "../APIroutes";
-import { Consulta, HorarioAtendimento, Medico, Paciente } from "../interfaces";
+import { Consulta } from "../interfaces";
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useTheme } from "@mui/material/styles";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Estilização para a linha da tabela com hover
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -43,44 +46,86 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 const ListagemConsultas = () => {
     const theme = useTheme();
 
-    const [consultas, setConsultas] = useState<Consulta[]>([
-        { id: 1, medico: { nome: 'Dr. João' } as Medico, horario: '2024-11-10T10:00:00', reservado: false, paciente: { nome: 'Maria' } as Paciente },
-        { id: 2, medico: { nome: 'Dra. Ana' } as Medico, horario: '2024-11-11T14:30:00', reservado: true, paciente: { nome: 'Carlos' } as Paciente },
-        { id: 3, medico: { nome: 'Dr. Pedro' } as Medico, horario: '2024-11-12T09:00:00', reservado: false, paciente: { nome: 'Sofia' } as Paciente },
-    ]);
+    const [consultas, setConsultas] = useState<Consulta[]>([]);
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
     const [consultaEdit, setConsultaEdit] = useState<Consulta | null>(null);
     const [consultaDelete, setConsultaDelete] = useState<Consulta | null>(null);
 
-    const [horarios, setHorarios] = useState<HorarioAtendimento[]>([]);
-
-    const [openHorarios, setOpenHorarios] = useState(false);
-    const [consultaSelecionada, setConsultaSelecionada] = useState<Consulta | null>(null);
-
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedConsulta, setSelectedConsulta] = useState<Consulta | null>(null);
 
+    // State for New Consultation Modal
+    const [openNovaConsulta, setOpenNovaConsulta] = useState(false);
+    const [selectedClinica, setSelectedClinica] = useState('');
+    const [selectedMedico, setSelectedMedico] = useState('');
+    const [selectedPaciente, setSelectedPaciente] = useState(''); // Adicionado
+    const [selectedDateTime, setSelectedDateTime] = useState<Date | null>(null);
+
+    // Options for Clinic and Doctors Selects
+    const [clinicas, setClinicas] = useState<{ id: number, nome: string }[]>([]);
+    const [medicos, setMedicos] = useState<{ id: number, nome: string }[]>([]);
+    const [pacientes, setPacientes] = useState<{ id: number, nome: string }[]>([]); // Adicionado
+
     useEffect(() => {
-        //Removido para usar os dados mockados
-        // fetch(LIST_AGENDAMENTO())
-        //     .then((response) => response.json())
-        //     .then((data) => {
-        //         setConsultas(data);
-        //     })
-        //     .catch((error) => console.error("Erro ao buscar Consultas:", error));
+        const fetchConsultas = async () => {
+            try {
+                const response = await fetch(LIST_AGENDAMENTO());
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setConsultas(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Erro ao buscar Consultas:", error);
+            }
+        };
+
+        const fetchClinicas = async () => {
+            try {
+                const response = await fetch(LIST_CLINICA());
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setClinicas(data.map((clinica: any) => ({ id: clinica.id, nome: clinica.nomeFantasia })));
+            } catch (error) {
+                console.error("Erro ao buscar Clínicas:", error);
+            }
+        };
+
+        const fetchMedicos = async () => {
+            try {
+                const response = await fetch(LIST_MEDICO());
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setMedicos(data.map((medico: any) => ({ id: medico.id, nome: medico.nome })));
+            } catch (error) {
+                console.error("Erro ao buscar Médicos:", error);
+            }
+        };
+
+        const fetchPacientes = async () => { // Adicionado
+            try {
+                const response = await fetch(LIST_PACIENTE());
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setPacientes(data.map((paciente: any) => ({ id: paciente.id, nome: paciente.nome })));
+            } catch (error) {
+                console.error("Erro ao buscar Pacientes:", error);
+            }
+        };
+
+        fetchConsultas();
+        fetchClinicas();
+        fetchMedicos();
+        fetchPacientes(); // Adicionado
     }, []);
 
-
-    const handleHorariosClick = (consulta: Consulta) => {
-        setConsultaSelecionada(consulta);
-        setOpenHorarios(true);
-
-        //fetch(LIST_AGENDAMENTO()) // TODO: Trocar para rota de busca de médico.
-        //    .then((response) => response.json())
-        //    .then((data: HorarioAtendimento[]) => setHorarios(data))
-        //    .catch((error) => console.error("Erro ao buscar horários:", error));
-    };
 
     const handleOpenDetails = (consulta: Consulta) => {
         setSelectedConsulta(consulta);
@@ -102,87 +147,52 @@ const ListagemConsultas = () => {
         setOpenDelete(true);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (consultaEdit) {
-            fetch(UPDATE_AGENDAMENTO(consultaEdit.id),
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(consultaEdit),
+            try {
+                const response = await fetch(UPDATE_AGENDAMENTO(consultaEdit.id),
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(consultaEdit),
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            )
-                .then((response) => response.json())
-                .then((updatedConsulta) => {
-                    setConsultas(
-                        consultas.map((p) =>
-                            p.id === updatedConsulta.id ? updatedConsulta : p
-                        )
-                    );
-                    setOpenEdit(false);
-                })
-                .catch((error) => console.error("Erro ao atualizar Consulta:", error));
-        }
-    };
-
-    const handleDelete = () => {
-        if (consultaDelete) {
-            fetch(DELETE_AGENDAMENTO(consultaDelete.id),
-                {
-                    method: "DELETE",
-                }
-            )
-                .then(() => {
-                    setConsultas(consultas.filter((p) => p.id !== consultaDelete.id));
-                    setOpenDelete(false);
-                })
-                .catch((error) => console.error("Erro ao excluir consulta:", error));
-        }
-    };
-
-    const reservarHorario = async (horarioId: number) => {
-        const username = prompt("Digite seu username para reservar este horário:");
-        if (!username) return;
-
-        try {
-            const response = await fetch("/api/reservar-horario", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ username, horarioId })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Erro ao reservar o horário");
+                const updatedConsulta = await response.json();
+                setConsultas(
+                    consultas.map((p) =>
+                        p.id === updatedConsulta.id ? updatedConsulta : p
+                    )
+                );
+                setOpenEdit(false);
+            } catch (error) {
+                console.error("Erro ao atualizar Consulta:", error);
             }
-
-            alert("Horário reservado com sucesso!");
-        } catch (error: any) {
-            alert(error.message);
         }
     };
 
-    const [openNovaConsulta, setOpenNovaConsulta] = useState(false);
-    const [selectedClinica, setSelectedClinica] = useState('');
-    const [selectedMedico, setSelectedMedico] = useState('');
-    const [selectedDateTime, setSelectedDateTime] = useState<Date | null>(null);
-
-    // Dados fictícios para as clínicas
-    const clinicas = [
-        { id: '1', nome: 'Clínica A' },
-        { id: '2', nome: 'Clínica B' },
-        { id: '3', nome: 'Clínica C' },
-    ];
-
-    // Dados fictícios para os médicos (você precisará filtrar isso no mundo real)
-    const medicos = [
-        { id: '1', nome: 'Dr. João' },
-        { id: '2', nome: 'Dra. Maria' },
-        { id: '3', nome: 'Dr. Pedro' },
-    ];
+    const handleDelete = async () => {
+        if (consultaDelete) {
+            try {
+                const response = await fetch(DELETE_AGENDAMENTO(consultaDelete.id),
+                    {
+                        method: "DELETE",
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                setConsultas(consultas.filter((p) => p.id !== consultaDelete.id));
+                setOpenDelete(false);
+            } catch (error) {
+                console.error("Erro ao excluir consulta:", error);
+            }
+        }
+    };
 
     const handleNovaConsultaClick = () => {
         setOpenNovaConsulta(true);
@@ -192,20 +202,25 @@ const ListagemConsultas = () => {
         setOpenNovaConsulta(false);
         setSelectedClinica('');
         setSelectedMedico('');
+        setSelectedPaciente(''); // Adicionado
         setSelectedDateTime(null);
     };
 
     const handleSalvarNovaConsulta = async () => {
-        if (!selectedClinica || !selectedMedico || !selectedDateTime) {
+        if (!selectedClinica || !selectedMedico || !selectedPaciente || !selectedDateTime) {
             alert('Por favor, preencha todos os campos.');
             return;
         }
 
+        // Format the date to yyyy-MM-dd HH:mm:ss format, adapt timezone if needed
+        const formattedDateTime = format(selectedDateTime, "yyyy-MM-dd HH:mm:ss", { locale: ptBR });
+
         const novaConsulta = {
-            clinicaId: selectedClinica,
-            medicoId: selectedMedico,
-            horario: selectedDateTime.toISOString(),
-            // Outros campos da consulta
+            clinicId: parseInt(selectedClinica), // clinicId is a number
+            doctorId: parseInt(selectedMedico), // doctorId is a number
+            patientId: parseInt(selectedPaciente), //  Adicionado
+            dateTime: formattedDateTime, // dateTime is a string in "yyyy-MM-dd HH:mm:ss" format
+            status: "PENDING"  // Must match one of the enum values
         };
 
         try {
@@ -222,6 +237,8 @@ const ListagemConsultas = () => {
                 throw new Error(errorData.message || 'Erro ao criar consulta');
             }
 
+            const novaConsultaResponse = await response.json();
+            setConsultas([...consultas, novaConsultaResponse]);
             alert('Consulta criada com sucesso!');
             handleCloseNovaConsulta();
         } catch (error: any) {
@@ -234,7 +251,6 @@ const ListagemConsultas = () => {
         <DashboardCard title="Listagem geral de Consultas">
             <>
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                    
                     <Button
                         variant="contained"
                         color="primary"
@@ -249,26 +265,28 @@ const ListagemConsultas = () => {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Id</TableCell>
+                                <TableCell>Data/Hora</TableCell>
                                 <TableCell>Médico</TableCell>
-                                <TableCell>Horário</TableCell>
-                                <TableCell>Reservado</TableCell>
                                 <TableCell>Paciente</TableCell>
+                                <TableCell>Clínica</TableCell>
+                                <TableCell>Status</TableCell>
                                 <TableCell align="right">Ações</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {consultas.map((consulta) => (
-                                 <StyledTableRow key={consulta.id} onClick={() => handleOpenDetails(consulta)}>
+                                <StyledTableRow key={consulta.id} onClick={() => handleOpenDetails(consulta)}>
                                     <TableCell>{consulta.id}</TableCell>
-                                    <TableCell>{consulta.medico.nome}</TableCell>
-                                    <TableCell>{consulta.horario}</TableCell>
-                                    <TableCell>{consulta.reservado ? "Sim" : "Não"}</TableCell>
-                                    <TableCell>{consulta.paciente.nome}</TableCell>
+                                    <TableCell>{consulta.dateTime}</TableCell>
+                                    <TableCell>{consulta.doctorName}</TableCell>
+                                    <TableCell>{consulta.patientName}</TableCell>
+                                    <TableCell>{consulta.clinicName}</TableCell>
+                                    <TableCell>{consulta.status}</TableCell>
                                     <TableCell align="right">
                                         <IconButton
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleHorariosClick(consulta);
+                                                handleOpenDetails(consulta);
                                             }}
                                             color="secondary">
                                             <AccessTime />
@@ -325,13 +343,13 @@ const ListagemConsultas = () => {
                         {selectedConsulta && (
                             <>
                                 <Typography variant="subtitle1">
-                                    Médico: {selectedConsulta.medico?.nome}
+                                    Médico: {selectedConsulta.doctorName}
                                 </Typography>
                                 <Typography variant="subtitle1">
-                                    Horário: {selectedConsulta.horario}
+                                    Horário: {selectedConsulta.dateTime}
                                 </Typography>
                                 <Typography variant="subtitle1">
-                                    Paciente: {selectedConsulta.paciente?.nome}
+                                    Paciente: {selectedConsulta.patientName}
                                 </Typography>
                             </>
                         )}
@@ -388,6 +406,21 @@ const ListagemConsultas = () => {
                                 ))}
                             </Select>
                         </FormControl>
+                        {/* Select para Paciente */}
+                        <FormControl fullWidth margin="dense">
+                            <InputLabel id="paciente-select-label">Paciente</InputLabel>
+                            <Select
+                                labelId="paciente-select-label"
+                                id="paciente-select"
+                                value={selectedPaciente}
+                                label="Paciente"
+                                onChange={(e) => setSelectedPaciente(e.target.value as string)}
+                            >
+                                {pacientes.map((paciente) => (
+                                    <MenuItem key={paciente.id} value={paciente.id}>{paciente.nome}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         <FormControl fullWidth margin="dense">
                             <LocalizationProvider dateAdapter={AdapterDateFns}>
                                 <DateTimePicker
@@ -396,7 +429,7 @@ const ListagemConsultas = () => {
                                     onChange={(newValue) => {
                                         setSelectedDateTime(newValue);
                                     }}
-                                    renderInput={(params) => <TextField {...params} />} // Pode ignorar esse erro.
+                                    renderInput={(params: TextFieldProps) => <TextField {...params} />}
                                 />
                             </LocalizationProvider>
                         </FormControl>
@@ -408,71 +441,6 @@ const ListagemConsultas = () => {
                                 Salvar
                             </Button>
                         </Box>
-                    </Box>
-                </Modal>
-
-                {/* Modal para exibir os horários */}
-                <Modal open={openHorarios} onClose={() => setOpenHorarios(false)}>
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: 900,
-                            bgcolor: "background.paper",
-                            boxShadow: 24,
-                            p: 4,
-                            textAlign: "center",
-                        }}
-                    >
-                        <h2>Horários de {consultaSelecionada?.medico.nome}</h2>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Horário</TableCell>
-                                    <TableCell>Disponível</TableCell>
-                                    <TableCell>Paciente</TableCell>
-                                    <TableCell>Ações</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {horarios.length > 0 ? (
-                                    horarios.map((horario) => (
-                                        <TableRow key={horario.id}>
-                                            <TableCell>{new Date(horario.horario).toLocaleString()}</TableCell>
-                                            <TableCell>{horario.reservado ? "Não" : "Sim"}</TableCell>
-                                            <TableCell>{horario.paciente ? horario.paciente : "—"}</TableCell>
-                                            <TableCell>
-                                                {!horario.reservado && (
-                                                    <Button
-                                                        variant="contained"
-                                                        color="primary"
-                                                        onClick={() => reservarHorario(horario.id)}
-                                                    >
-                                                        Reservar
-                                                    </Button>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} align="center">
-                                            Nenhum horário encontrado.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            sx={{ mt: 2 }}
-                            onClick={() => setOpenHorarios(false)}
-                        >
-                            Fechar
-                        </Button>
                     </Box>
                 </Modal>
 
@@ -500,11 +468,11 @@ const ListagemConsultas = () => {
                                     fullWidth
                                     margin="dense"
                                     label="Nome do Médico"
-                                    value={consultaEdit.medico.nome}
+                                    value={consultaEdit.doctorName}
                                     onChange={(e) =>
                                         setConsultaEdit({
                                             ...consultaEdit,
-                                            medico: { ...consultaEdit.medico, nome: e.target.value },
+                                            doctorName: e.target.value,
                                         })
                                     }
                                 />
@@ -512,67 +480,12 @@ const ListagemConsultas = () => {
                                 <TextField
                                     fullWidth
                                     margin="dense"
-                                    label="Email do Médico"
-                                    value={consultaEdit.medico.email}
+                                    label="Nome do Paciente"
+                                    value={consultaEdit.patientName}
                                     onChange={(e) =>
                                         setConsultaEdit({
                                             ...consultaEdit,
-                                            medico: { ...consultaEdit.medico, email: e.target.value },
-                                        })
-                                    }
-                                />
-
-                                <TextField
-                                    fullWidth
-                                    margin="dense"
-                                    label="Username"
-                                    value={consultaEdit.medico.nomeUsuario}
-                                    onChange={(e) =>
-                                        setConsultaEdit({
-                                            ...consultaEdit,
-                                            medico: { ...consultaEdit.medico, nomeUsuario: e.target.value },
-                                        })
-                                    }
-                                />
-
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={consultaEdit.medico.enabled}
-                                            onChange={(e) =>
-                                                setConsultaEdit({
-                                                    ...consultaEdit,
-                                                    medico: { ...consultaEdit.medico, enabled: e.target.checked },
-                                                })
-                                            }
-                                            color="primary"
-                                        />
-                                    }
-                                    label="Ativo"
-                                />
-
-                                <TextField
-                                    fullWidth
-                                    margin="dense"
-                                    label="RG do Médico"
-                                    value={consultaEdit.medico.rg}
-                                    onChange={(e) =>
-                                        setConsultaEdit({
-                                            ...consultaEdit,
-                                            medico: { ...consultaEdit.medico, rg: e.target.value },
-                                        })
-                                    }
-                                />
-
-                                <TextField
-                                    fullWidth
-                                    margin="dense"
-                                    label="CPF do Médico"
-                                    value={consultaEdit.medico.cpf}
-                                    onChange={(e) =>
-                                        setConsultaEdit({
-                                            ...consultaEdit,
-                                            medico: { ...consultaEdit.medico, cpf: e.target.value },
+                                            patientName: e.target.value,
                                         })
                                     }
                                 />

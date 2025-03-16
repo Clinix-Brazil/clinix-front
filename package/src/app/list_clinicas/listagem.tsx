@@ -9,7 +9,11 @@ import {
     Modal,
     Button,
     TextField,
-    styled
+    styled,
+    Select,
+    MenuItem,
+    InputLabel,
+    FormControl
 } from '@mui/material';
 import DashboardCard from '@/app/(DashboardLayout)//components/shared/DashboardCard';
 import { useEffect, useState } from 'react';
@@ -26,6 +30,20 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     },
 }));
 
+// Definição dos tipos de clínica
+const tiposClinica = [
+    "HOSPITAL",
+    "CLINICA_GERAL",
+    "ESPECIALIZADA",
+    "URGENCIA"
+];
+
+// Interface para Omit<Clinica, 'id'> com os tipos corretos
+interface NewClinica extends Omit<Clinica, 'id'> {
+    tipo: string;
+    gerenteId: number;
+}
+
 const ListagemClinicas = () => {
     const theme = useTheme();
 
@@ -38,16 +56,15 @@ const ListagemClinicas = () => {
     const [selectedClinicDetails, setSelectedClinicDetails] = useState<Clinica | null>(null);
 
     const [openAdd, setOpenAdd] = useState(false);
-    const [newClinica, setNewClinica] = useState<Omit<Clinica, 'id'>>({
+    const [newClinica, setNewClinica] = useState<NewClinica>({
         nomeFantasia: '',
         cnpj: '',
         telefone: '',
         horarioAbertura: '',
         horarioFechamento: '',
-        tipo: 'CLINICA_GERAL', // Add default value for 'tipo'
-        gerenteId: 1, // Add default value for 'gerenteId'
+        tipo: 'CLINICA_GERAL', // Valor padrão para o tipo
+        gerenteId: 1, // Valor padrão para o ID do gerente
     });
-
 
     useEffect(() => {
         fetch(LIST_CLINICA())
@@ -70,7 +87,6 @@ const ListagemClinicas = () => {
 
     const handleSave = () => {
         if (clinicaEdit) {
-            clinicaEdit.id = 1
             fetch(
                 UPDATE_CLINICA(clinicaEdit.id),
                 {
@@ -83,9 +99,9 @@ const ListagemClinicas = () => {
             )
                 .then((response) => response.json())
                 .then((updatedClinica) => {
-                    setClinicas(
-                        clinicas.map((p) =>
-                            p.id === updatedClinica.id ? updatedClinica : p
+                    setClinicas(prevClinicas => 
+                        prevClinicas.map((clinica) =>
+                            clinica.id === updatedClinica.id ? updatedClinica : clinica
                         )
                     );
                     setOpenEdit(false);
@@ -103,7 +119,7 @@ const ListagemClinicas = () => {
                 }
             )
                 .then(() => {
-                    setClinicas(clinicas.filter((p) => p.id !== clinicaDelete.id));
+                    setClinicas(clinicas.filter((clinica) => clinica.id !== clinicaDelete.id));
                     setOpenDelete(false);
                 })
                 .catch((error) => console.error('Erro ao excluir clinica:', error));
@@ -251,6 +267,10 @@ const ListagemClinicas = () => {
                                             <TableCell component='th' scope='row'>Horário de Fechamento:</TableCell>
                                             <TableCell>{selectedClinicDetails.horarioFechamento}</TableCell>
                                         </TableRow>
+                                        <TableRow>
+                                            <TableCell component='th' scope='row'>Tipo:</TableCell>
+                                            <TableCell>{selectedClinicDetails.tipo}</TableCell>
+                                        </TableRow>
                                     </TableBody>
                                 </Table>
                             )}
@@ -327,24 +347,31 @@ const ListagemClinicas = () => {
                                             setClinicaEdit({ ...clinicaEdit, horarioFechamento: e.target.value })
                                         }
                                     />
+                                     <FormControl fullWidth margin="dense">
+                                        <InputLabel id="tipo-clinica-label">Tipo de Clínica</InputLabel>
+                                        <Select
+                                            labelId="tipo-clinica-label"
+                                            id="tipo-clinica"
+                                            value={clinicaEdit.tipo}
+                                            label="Tipo de Clínica"
+                                            onChange={(e) => setClinicaEdit({ ...clinicaEdit, tipo: e.target.value })}
+                                        >
+                                            {tiposClinica.map((tipo) => (
+                                                <MenuItem key={tipo} value={tipo}>{tipo}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
                                     <TextField
-                                        sx={{ display: "none" }}
-                                        value={1}
                                         fullWidth
                                         margin='dense'
+                                        label='ID do Gerente'
+                                        type="number"
+                                        value={clinicaEdit.gerenteId}
                                         onChange={(e) =>
                                             setClinicaEdit({ ...clinicaEdit, gerenteId: Number(e.target.value) })
                                         }
                                     />
-                                    <TextField
-                                        sx={{ display: "none" }}
-                                        value={"CLINICA_GERAL"}
-                                        fullWidth
-                                        margin='dense'
-                                        onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, tipo: e.target.value })
-                                        }
-                                    />
+
                                 </>
                             )}
                             <Box
@@ -450,6 +477,30 @@ const ListagemClinicas = () => {
                                 label='Horário Fechamento'
                                 value={newClinica.horarioFechamento}
                                 onChange={(e) => setNewClinica({ ...newClinica, horarioFechamento: e.target.value })}
+                            />
+
+                            <FormControl fullWidth margin="dense">
+                                <InputLabel id="tipo-clinica-label">Tipo de Clínica</InputLabel>
+                                <Select
+                                    labelId="tipo-clinica-label"
+                                    id="tipo-clinica"
+                                    value={newClinica.tipo}
+                                    label="Tipo de Clínica"
+                                    onChange={(e) => setNewClinica({ ...newClinica, tipo: e.target.value })}
+                                >
+                                    {tiposClinica.map((tipo) => (
+                                        <MenuItem key={tipo} value={tipo}>{tipo}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <TextField
+                                fullWidth
+                                margin='dense'
+                                label='ID do Gerente'
+                                type="number"
+                                value={newClinica.gerenteId}
+                                onChange={(e) => setNewClinica({ ...newClinica, gerenteId: Number(e.target.value) })}
                             />
 
                             <Box
