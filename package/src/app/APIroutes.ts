@@ -14,7 +14,10 @@ export const UPDATE_USUARIO = (id: number) => `${BASE_URL}${USERS_PATH}${PORT_US
 export const DELETE_USUARIO = (id: number) => `${BASE_URL}${USERS_PATH}${PORT_USER}${id}`;
 export const BUSCAR_USUARIO = (id: number) => `${BASE_URL}${USERS_PATH}${PORT_USER}/usuario/buscar/${id}`; // TODO: Implementar no back-end.
 
-export const CREATE_PACIENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/save`;
+//export const CREATE_PACIENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/save`;
+
+export const CREATE_PACIENTE= () => `http://localhost:8084/clinix_brazil_requisicoes/mensageria/enviar`;
+
 export const LIST_PACIENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/list`;
 export const UPDATE_PACIENTE = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/${id}`;
 export const DELETE_PACIENTE = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/${id}`;

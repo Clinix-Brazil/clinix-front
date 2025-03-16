@@ -110,6 +110,28 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
         }
         setOpenSnackbar(false);
     };
+/*
+    const enviarPacienteParaFila = async (paciente: any) => {
+        try {
+            const response = await fetch("http://localhost:8084/clinix_brazil_requisicoes/mensageria/enviar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(paciente),
+            });
+
+            if (!response.ok) {
+                throw new Error("Erro ao enviar paciente para a fila");
+            }
+
+            console.log("Paciente enviado para a fila com sucesso!");
+        } catch (error) {
+            console.error("Erro ao enviar paciente para a fila:", error);
+        }
+    };
+
+ */
 
 
     const handleRegister = async () => {
@@ -191,42 +213,38 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
 
         try {
             const response = await fetch(createSpecificUrl, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ ...usuarioData, ...specificData }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                setSnackbarMessage(errorData.message || 'Erro ao cadastrar perfil específico');
-                setSnackbarSeverity('error');
+                setSnackbarMessage(errorData.message || "Erro ao cadastrar perfil específico");
+                setSnackbarSeverity("error");
                 setOpenSnackbar(true);
-                throw new Error(errorData.message || 'Erro ao cadastrar perfil específico');
+                throw new Error(errorData.message || "Erro ao cadastrar perfil específico");
             }
+            /*
+            // Enviar paciente para a fila do RabbitMQ após cadastro bem-sucedido
+            if (role === "paciente") {
+                await enviarPacienteParaFila(usuarioData);
+            }
+            */
 
-            //Exibir mensagem de sucesso
-            setSnackbarMessage('Usuário cadastrado com sucesso!');
-            setSnackbarSeverity('success');
+            // Exibir mensagem de sucesso
+            setSnackbarMessage("Usuário cadastrado com sucesso!");
+            setSnackbarSeverity("success");
             setOpenSnackbar(true);
-
-            //Limpar os campos do formulário após o sucesso do cadastro
-            setNome('');
-            setNomeUsuario('');
-            setEmail('');
-            setSenha('');
-            setCpf('');
-            setRg('');
-            setCrm('');
-            setInicioAtendimento('');
-            setFimAtendimento('');
         } catch (error: any) {
             console.error(error);
             setSnackbarMessage(`Erro ao cadastrar usuário: ${error.message}`);
-            setSnackbarSeverity('error');
+            setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
+
     };
 
     return (
