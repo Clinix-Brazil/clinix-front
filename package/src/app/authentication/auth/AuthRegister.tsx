@@ -110,29 +110,6 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
         }
         setOpenSnackbar(false);
     };
-/*
-    const enviarPacienteParaFila = async (paciente: any) => {
-        try {
-            const response = await fetch("http://localhost:8084/clinix_brazil_requisicoes/mensageria/enviar", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(paciente),
-            });
-
-            if (!response.ok) {
-                throw new Error("Erro ao enviar paciente para a fila");
-            }
-
-            console.log("Paciente enviado para a fila com sucesso!");
-        } catch (error) {
-            console.error("Erro ao enviar paciente para a fila:", error);
-        }
-    };
-
- */
-
 
     const handleRegister = async () => {
         let isValid = true;
@@ -227,12 +204,6 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
                 setOpenSnackbar(true);
                 throw new Error(errorData.message || "Erro ao cadastrar perfil específico");
             }
-            /*
-            // Enviar paciente para a fila do RabbitMQ após cadastro bem-sucedido
-            if (role === "paciente") {
-                await enviarPacienteParaFila(usuarioData);
-            }
-            */
 
             // Exibir mensagem de sucesso
             setSnackbarMessage("Usuário cadastrado com sucesso!");
