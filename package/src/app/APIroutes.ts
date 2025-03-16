@@ -24,6 +24,7 @@ export const CREATE_MEDICO = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/medico/
 export const LIST_MEDICO = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/medico/list`;
 export const UPDATE_MEDICO = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/medico/${id}`;
 export const DELETE_MEDICO = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/medico/${id}`;
+export const BUSCAR_MEDICO = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/medico/${id}`;
 
 export const CREATE_GERENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/gerente/save`;
 export const LIST_GERENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/gerente/list`;

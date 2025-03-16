@@ -18,12 +18,18 @@ import {
     Tabs,
     Tab,
     SelectChangeEvent,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import DashboardCard from '@/app/(DashboardLayout)//components/shared/DashboardCard';
 import { useEffect, useState } from 'react';
-import { Delete, Edit, Add, Link, Event, Check, Close } from '@mui/icons-material'; // Importe os ícones Check e Close
-import { LIST_CLINICA, UPDATE_CLINICA, DELETE_CLINICA, CREATE_CLINICA, LIST_PACIENTE, LIST_MEDICO, LIST_GERENTE, SOLICITAR_VINCULO, SOLICITACOES_VINCULO, ACEITAR_VINCULO, RECUSAR_VINCULO, VINCULAR_CLINICA } from '../APIroutes';
-import { Clinica, Gerente, Medico, Paciente, Solicitacao } from '../interfaces';
+import { Delete, Edit, Add, Link, Event, Check, Close } from '@mui/icons-material';
+import {
+    LIST_CLINICA, UPDATE_CLINICA, DELETE_CLINICA, CREATE_CLINICA, LIST_MEDICO,
+    SOLICITAR_VINCULO, SOLICITACOES_VINCULO, ACEITAR_VINCULO, RECUSAR_VINCULO,
+    BUSCAR_MEDICO, BUSCAR_CLINICA
+} from '../APIroutes';
+import { Clinica, Medico, Solicitacao } from '../interfaces';
 import { useTheme } from '@mui/material/styles';
 import Image from 'next/image';
 
@@ -62,18 +68,16 @@ const ListagemClinicas = () => {
     const [clinicaDelete, setClinicaDelete] = useState<Clinica | null>(null);
     const [openClinicDetails, setOpenClinicDetails] = useState(false);
     const [selectedClinicDetails, setSelectedClinicDetails] = useState<Clinica | null>(null);
-    const [openVinculos, setOpenVinculos] = useState(false); // Estado para o modal de vínculos
-    const [tabValue, setTabValue] = useState(0); // Estado para controlar a aba ativa
+    const [openVinculos, setOpenVinculos] = useState(false);
+    const [tabValue, setTabValue] = useState(0);
 
-    const [gerentes, setGerentes] = useState<Gerente[]>([]);
     const [medicos, setMedicos] = useState<Medico[]>([]);
-    const [pacientes, setPacientes] = useState<Paciente[]>([]);
     const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
+    const [medicoNomes, setMedicoNomes] = useState<{ [id: number]: string }>({});
 
-    const [selectedGerente, setSelectedGerente] = useState<number | null>(null);
     const [selectedMedico, setSelectedMedico] = useState<number | null>(null);
-    const [selectedPaciente, setSelectedPaciente] = useState<number | null>(null);
-    const [selectedSolicitacao, setSelectedSolicitacao] = useState<number | null>(null);
+    const [horarioInicio, setHorarioInicio] = useState<string>('');
+    const [horarioTermino, setHorarioTermino] = useState<string>('');
 
     const [openAdd, setOpenAdd] = useState(false);
     const [newClinica, setNewClinica] = useState<NewClinica>({
@@ -82,12 +86,17 @@ const ListagemClinicas = () => {
         telefone: '',
         horarioAbertura: '',
         horarioFechamento: '',
-        tipo: 'CLINICA_GERAL', // Valor padrão para o tipo
-        gerenteId: 1, // Valor padrão para o ID do gerente
+        tipo: 'CLINICA_GERAL',
+        gerenteId: 1,
         medicos: [] as number[],
         gerentes: [] as number[],
         pacientes: [] as number[],
     });
+
+    // Snackbar state
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
     useEffect(() => {
         fetch(LIST_CLINICA())
@@ -95,7 +104,10 @@ const ListagemClinicas = () => {
             .then((data) => {
                 setClinicas(data);
             })
-            .catch((error) => console.error('Erro ao buscar clinicas:', error));
+            .catch((error) => {
+                console.error('Erro ao buscar clinicas:', error);
+                showSnackbar('Erro ao buscar clínicas.', 'error');
+            });
     }, []);
 
     const handleEditClick = (clinica: Clinica) => {
@@ -120,7 +132,12 @@ const ListagemClinicas = () => {
                     body: JSON.stringify(clinicaEdit),
                 }
             )
-                .then((response) => response.json())
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao atualizar clínica.');
+                    }
+                    return response.json();
+                })
                 .then((updatedClinica) => {
                     setClinicas(prevClinicas =>
                         prevClinicas.map((clinica) =>
@@ -128,8 +145,12 @@ const ListagemClinicas = () => {
                         )
                     );
                     setOpenEdit(false);
+                    showSnackbar('Clínica atualizada com sucesso!', 'success');
                 })
-                .catch((error) => console.error('Erro ao atualizar clinica:', error));
+                .catch((error) => {
+                    console.error('Erro ao atualizar clinica:', error);
+                    showSnackbar('Erro ao atualizar clínica.', 'error');
+                });
         }
     };
 
@@ -141,11 +162,20 @@ const ListagemClinicas = () => {
                     method: 'DELETE',
                 }
             )
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao excluir clínica.');
+                    }
+                })
                 .then(() => {
                     setClinicas(clinicas.filter((clinica) => clinica.id !== clinicaDelete.id));
                     setOpenDelete(false);
+                    showSnackbar('Clínica excluída com sucesso!', 'success');
                 })
-                .catch((error) => console.error('Erro ao excluir clinica:', error));
+                .catch((error) => {
+                    console.error('Erro ao excluir clinica:', error);
+                    showSnackbar('Erro ao excluir clínica.', 'error');
+                });
         }
     };
 
@@ -165,19 +195,18 @@ const ListagemClinicas = () => {
 
     const handleCloseAddModal = () => {
         setOpenAdd(false);
-        setNewClinica(
-            {
-                nomeFantasia: '',
-                cnpj: '',
-                telefone: '',
-                horarioAbertura: '',
-                horarioFechamento: '',
-                tipo: 'CLINICA_GERAL',
-                gerenteId: 1,
-                medicos: [] as number[],
-                gerentes: [] as number[],
-                pacientes: [] as number[],
-            });
+        setNewClinica({
+            nomeFantasia: '',
+            cnpj: '',
+            telefone: '',
+            horarioAbertura: '',
+            horarioFechamento: '',
+            tipo: 'CLINICA_GERAL',
+            gerenteId: 1,
+            medicos: [] as number[],
+            gerentes: [] as number[],
+            pacientes: [] as number[],
+        });
     };
 
     const handleAddClinica = () => {
@@ -188,144 +217,182 @@ const ListagemClinicas = () => {
             },
             body: JSON.stringify(newClinica),
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao adicionar clínica.');
+                }
+                return response.json();
+            })
             .then(data => {
                 setClinicas([...clinicas, data]);
                 handleCloseAddModal();
+                showSnackbar('Clínica adicionada com sucesso!', 'success');
             })
-            .catch(error => console.error('Erro ao adicionar clínica:', error));
+            .catch(error => {
+                console.error('Erro ao adicionar clínica:', error);
+                showSnackbar('Erro ao adicionar clínica.', 'error');
+            });
     };
 
     const handleOpenVinculosModal = () => {
-        // Carrega os dados dos usuários quando o modal é aberto
         Promise.all([
-            fetch(LIST_GERENTE()).then(response => response.json()),
             fetch(LIST_MEDICO()).then(response => response.json()),
-            fetch(LIST_PACIENTE()).then(response => response.json()),
             fetch(SOLICITACOES_VINCULO(selectedClinicDetails!.id)).then(response => response.json()),
         ])
-            .then(([gerentesData, medicosData, pacientesData, vinculosData]) => {
-                setGerentes(gerentesData);
+            .then(async ([medicosData, vinculosData]) => {
                 setMedicos(medicosData);
-                setPacientes(pacientesData);
                 setSolicitacoes(vinculosData);
+                setMedicoNomes({}); // Limpar nomes anteriores
+
+                // Buscar o nome de cada médico
+                const nomesMedicos: { [key: number]: string } = {};
+                for (const solicitacao of vinculosData) {
+                    try {
+                        const medico = await fetch(BUSCAR_MEDICO(solicitacao.medicoId)).then(response => response.json());
+                        nomesMedicos[solicitacao.medicoId] = medico.nome;
+                    } catch (error) {
+                        console.error(`Erro ao buscar nome do médico ${solicitacao.medicoId}:`, error);
+                        nomesMedicos[solicitacao.medicoId] = 'Nome não encontrado';
+                    }
+                }
+                setMedicoNomes(nomesMedicos);
+
                 setOpenVinculos(true);
+                setTabValue(0);
             })
-            .catch(error => console.error('Erro ao buscar dados de usuários:', error));
+            .catch(error => {
+                console.error('Erro ao buscar dados de usuários:', error);
+                showSnackbar('Erro ao buscar dados para vínculos.', 'error');
+            });
     };
 
     const handleCloseVinculosModal = () => {
         setOpenVinculos(false);
+        setHorarioInicio('');
+        setHorarioTermino('');
     };
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
 
-    const handleGerenteChange = (event: SelectChangeEvent<number>) => {
-        setSelectedGerente(event.target.value as number);
-    };
-
     const handleMedicoChange = (event: SelectChangeEvent<number>) => {
         setSelectedMedico(event.target.value as number);
     };
 
-    const handlePacienteChange = (event: SelectChangeEvent<number>) => {
-        setSelectedPaciente(event.target.value as number);
-    };
+    const handleAceitarVinculo = async (solicitacao: Solicitacao) => {
+        const clinicaId = selectedClinicDetails!.id;
+        const requestBody = {
+            clinicaId: clinicaId,
+            medicoId: solicitacao.medicoId,
+        };
 
-    const handleSolicitacaoChange = (event: SelectChangeEvent<number>) => {
-        setSelectedSolicitacao(event.target.value as number);
-    }
-
-    const handleAceitarVinculo = (solicitacao: Solicitacao) => {
-        console.log(solicitacao);
-        const clinicaId = selectedClinicDetails!.id;  // Garante que selectedClinicDetails existe
-
-        fetch(ACEITAR_VINCULO(clinicaId, solicitacao.medicoId), {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erro ao aceitar vínculo');
-                }
-                // Atualizar a lista de solicitações após a aceitação
-                setSolicitacoes(prevSolicitacoes =>
-                    prevSolicitacoes.filter(s => s.id !== solicitacao.id)
-                );
-            })
-            .catch(error => console.error('Erro ao aceitar vínculo:', error));
-    };
-
-    const handleRecusarVinculo = (solicitacao: Solicitacao) => {
-        console.log(solicitacao);
-        const clinicaId = selectedClinicDetails!.id;  // Garante que selectedClinicDetails existe
-        console.log(clinicaId);
-        fetch(RECUSAR_VINCULO(clinicaId, solicitacao.medicoId), {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erro ao recusar vínculo');
-                }
-                // Atualizar a lista de solicitações após a recusa
-                setSolicitacoes(prevSolicitacoes =>
-                    prevSolicitacoes.filter(s => s.id !== solicitacao.id)
-                );
-            })
-            .catch(error => console.error('Erro ao recusar vínculo:', error));
-    };
-
-    const handleSaveVinculos = () => {
-        if (selectedClinicDetails) {
-            let selectedId: number | null = null;
-            switch (tabValue) {
-                case 0: // Gerentes
-                    selectedId = selectedGerente;
-                    break;
-                case 1: // Medicos
-                    selectedId = selectedMedico;
-                    break;
-                case 2: // Pacientes
-                    selectedId = selectedPaciente;
-                    break;
-                default:
-                    break;
-            }
-
-            const requestBody = {
-                clinicaId: selectedClinicDetails.id,
-                usuarioId: selectedId,
-            };
-
-            fetch(VINCULAR_CLINICA(requestBody.clinicaId, requestBody.usuarioId), {
-                method: 'POST',
+        try {
+            const response = await fetch(ACEITAR_VINCULO(requestBody.clinicaId, requestBody.medicoId), {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(requestBody),
-            })
-                .then(response => response.json())
-                .then(updatedClinica => {
-                    // Atualizar a clínica no estado local
-                    setClinicas(prevClinicas =>
-                        prevClinicas.map(clinica =>
-                            clinica.id === updatedClinica.id ? updatedClinica : clinica
-                        )
-                    );
-                    // Fechar o modal
-                    handleCloseVinculosModal();
-                })
-                .catch(error => console.error('Erro ao atualizar vínculos da clínica:', error));
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao aceitar vínculo');
+            }
+
+            setSolicitacoes(prevSolicitacoes =>
+                prevSolicitacoes.filter(s => s.id !== solicitacao.id)
+            );
+            showSnackbar('Vínculo aceito com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao aceitar vínculo:', error);
+            showSnackbar('Erro ao aceitar vínculo.', 'error');
         }
+    };
+
+    const handleRecusarVinculo = async (solicitacao: Solicitacao) => {
+        const clinicaId = selectedClinicDetails!.id;
+        const requestBody = {
+            clinicaId: clinicaId,
+            medicoId: solicitacao.medicoId,
+        };
+        try {
+            const response = await fetch(RECUSAR_VINCULO(requestBody.clinicaId, requestBody.medicoId), {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao recusar vínculo');
+            }
+            setSolicitacoes(prevSolicitacoes =>
+                prevSolicitacoes.filter(s => s.id !== solicitacao.id)
+            );
+            showSnackbar('Vínculo recusado com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao recusar vínculo:', error);
+            showSnackbar('Erro ao recusar vínculo.', 'error');
+        }
+    };
+
+    const handleSolicitarVinculo = () => {
+        if (!selectedClinicDetails) {
+            console.error("Nenhuma clinica selecionada");
+            return;
+        }
+
+        if (!selectedMedico) {
+            console.error("Nenhum médico selecionado");
+            return;
+        }
+
+        if (!horarioInicio || !horarioTermino) {
+            showSnackbar('Por favor, preencha os horários de início e término.', 'error');
+            return;
+        }
+
+        const requestBody = {
+            clinicaId: selectedClinicDetails.id,
+            usuarioId: selectedMedico,
+            horarioInicio: horarioInicio, // Formato HH:mm:ss
+            horarioTermino: horarioTermino // Formato HH:mm:ss
+        };
+
+        fetch(SOLICITAR_VINCULO(requestBody.clinicaId, requestBody.usuarioId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Erro ao solicitar vínculo")
+                }
+                showSnackbar('Solicitação de vínculo enviada com sucesso!', 'success');
+                setHorarioInicio('');
+                setHorarioTermino('');
+            })
+            .catch(error => {
+                console.error("Erro ao solicitar vínculo:", error)
+                showSnackbar('Erro ao solicitar vínculo.', 'error');
+            })
+    }
+
+    // Snackbar handler
+    const showSnackbar = (message: string, severity: 'success' | 'error') => {
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
+        setSnackbarOpen(true);
+    };
+
+    const handleCloseSnackbar = (event: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
+        setSnackbarOpen(false);
     };
 
     return (
@@ -358,7 +425,7 @@ const ListagemClinicas = () => {
                                         <TableCell align='right'>
                                             <IconButton
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // Impede que o evento de clique na linha seja disparado
+                                                    e.stopPropagation();
                                                     handleEditClick(clinica);
                                                 }}
                                                 color='primary'
@@ -367,7 +434,7 @@ const ListagemClinicas = () => {
                                             </IconButton>
                                             <IconButton
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // Impede que o evento de clique na linha seja disparado
+                                                    e.stopPropagation();
                                                     handleDeleteClick(clinica);
                                                 }}
                                                 color='error'
@@ -380,7 +447,8 @@ const ListagemClinicas = () => {
                             </TableBody>
                         </Table>
                     </Box>
-                    {/* Modal para exibir detalhes da clínica */}
+
+                    {/* Clinic Details Modal */}
                     <Modal
                         open={openClinicDetails}
                         onClose={handleCloseClinicDetails}
@@ -392,33 +460,29 @@ const ListagemClinicas = () => {
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: '60%', // Ocupa 60% da tela
-                            height: '70%', // Ocupa 70% da tela
+                            width: '60%',
+                            height: '70%',
                             bgcolor: theme.palette.background.paper,
-                            border: `1px solid ${theme.palette.divider}`, // Borda mais suave
+                            border: `1px solid ${theme.palette.divider}`,
                             borderRadius: '8px',
                             boxShadow: theme.shadows[5],
                             p: 4,
                             display: 'flex',
-                            flexDirection: 'column', // Garante que os botões fiquem abaixo das informações
+                            flexDirection: 'column',
                         }}>
                             {selectedClinicDetails && (
                                 <>
                                     <Grid container spacing={2}>
                                         <Grid item xs={12} sx={{ textAlign: 'center', mb: 2 }}>
-                                            <Typography variant='h4'>
-                                            Detalhes da clínica: <br />
-                                            </Typography>
                                             <Typography variant='h4' fontWeight='bold'>
-                                            {selectedClinicDetails.nomeFantasia}
+                                                {selectedClinicDetails.nomeFantasia}
                                             </Typography>
                                             <br />
                                         </Grid>
 
                                         <Grid item xs={12} md={6} sx={{ textAlign: 'center' }}>
-                                            {/*  Componente de imagem */}
                                             <Image
-                                                src="/images/logos/medicos.webp" // Substitua pelo caminho da sua imagem estática
+                                                src="/images/logos/medicos.webp"
                                                 alt="Imagem da Clínica"
                                                 width={300}
                                                 height={200}
@@ -431,7 +495,6 @@ const ListagemClinicas = () => {
                                         </Grid>
 
                                         <Grid item xs={12} md={6}>
-                                            {/* Informações da clínica formatadas */}
                                             <Box>
                                                 <Typography variant="subtitle2" fontWeight="bold">CNPJ:</Typography>
                                                 <Typography variant="body2">{selectedClinicDetails.cnpj}</Typography>
@@ -472,14 +535,14 @@ const ListagemClinicas = () => {
                         </Box>
                     </Modal>
 
-                    {/* Modal de Gerenciar Vínculos */}
+                    {/* Manage Vinculos Modal */}
                     <Modal open={openVinculos} onClose={handleCloseVinculosModal}>
                         <Box sx={{
                             position: 'absolute',
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: '60%', // Ajuste o tamanho conforme necessário
+                            width: '60%',
                             height: '70%',
                             bgcolor: theme.palette.background.paper,
                             border: `1px solid ${theme.palette.divider}`,
@@ -493,67 +556,68 @@ const ListagemClinicas = () => {
                                 Gerenciando vínculos de: {selectedClinicDetails?.nomeFantasia}
                             </Typography>
                             <Tabs value={tabValue} onChange={handleTabChange} aria-label="abas de vínculos">
-                                <Tab label="Gerentes" />
                                 <Tab label="Médicos" />
-                                <Tab label="Pacientes" />
                                 <Tab label="Solicitações" />
                             </Tabs>
                             <Box mt={2}>
                                 {tabValue === 0 && (
-                                    <FormControl fullWidth>
-                                        <InputLabel id="gerente-select-label">Selecionar Gerente</InputLabel>
-                                        <Select
-                                            labelId="gerente-select-label"
-                                            id="gerente-select"
-                                            value={selectedGerente || ''}
-                                            label="Selecionar Gerente"
-                                            onChange={handleGerenteChange}
-                                        >
-                                            {gerentes.map((gerente) => (
-                                                <MenuItem key={gerente.id} value={gerente.id}>{gerente.nome}</MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                    <>
+                                        <FormControl fullWidth>
+                                            <InputLabel id="medico-select-label">Selecionar Médico</InputLabel>
+                                            <Select
+                                                labelId="medico-select-label"
+                                                id="medico-select"
+                                                value={selectedMedico || ''}
+                                                label="Selecionar Médico"
+                                                onChange={handleMedicoChange}
+                                            >
+                                                {medicos.map((medico) => (
+                                                    <MenuItem key={medico.id} value={medico.id}>{medico.nome}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+
+                                        <Typography variant="subtitle1" mt={2}>
+                                            Disponibilidade de horários
+                                        </Typography>
+
+                                        <TextField
+                                            fullWidth
+                                            margin='dense'
+                                            label='Horário de início'
+                                            type="time" // Use type="time" para um seletor de horário
+                                            value={horarioInicio}
+                                            onChange={(e) => setHorarioInicio(e.target.value)}
+                                            inputProps={{
+                                                step: 60, // 60 segundos (1 minuto)
+                                            }}
+                                        />
+
+                                        <TextField
+                                            fullWidth
+                                            margin='dense'
+                                            label='Horário de término'
+                                            type="time" // Use type="time" para um seletor de horário
+                                            value={horarioTermino}
+                                            onChange={(e) => setHorarioTermino(e.target.value)}
+                                            inputProps={{
+                                                step: 60, // 60 segundos (1 minuto)
+                                            }}
+                                        />
+
+                                        <Box mt={3} display="flex" justifyContent="center">
+                                            <Button variant="contained" color="primary" onClick={() => handleSolicitarVinculo()}>
+                                                Solicitar Vínculo
+                                            </Button>
+                                        </Box>
+                                    </>
                                 )}
                                 {tabValue === 1 && (
-                                    <FormControl fullWidth>
-                                        <InputLabel id="medico-select-label">Selecionar Médico</InputLabel>
-                                        <Select
-                                            labelId="medico-select-label"
-                                            id="medico-select"
-                                            value={selectedMedico || ''}
-                                            label="Selecionar Médico"
-                                            onChange={handleMedicoChange}
-                                        >
-                                            {medicos.map((medico) => (
-                                                <MenuItem key={medico.id} value={medico.id}>{medico.nome}</MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                )}
-                                {tabValue === 2 && (
-                                    <FormControl fullWidth>
-                                        <InputLabel id="paciente-select-label">Selecionar Paciente</InputLabel>
-                                        <Select
-                                            labelId="paciente-select-label"
-                                            id="paciente-select"
-                                            value={selectedPaciente || ''}
-                                            label="Selecionar Paciente"
-                                            onChange={handlePacienteChange}
-                                        >
-                                            {pacientes.map((paciente) => (
-                                                <MenuItem key={paciente.id} value={paciente.id}>{paciente.nome}</MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                )}
-                                {tabValue === 3 && (
                                     <Box sx={{ overflow: 'auto' }}>
                                         <Table aria-label="Solicitações de Vínculo">
                                             <TableHead>
                                                 <TableRow>
-                                                    <TableCell>ID</TableCell>
-                                                    {/* <TableCell>Usuário</TableCell> */}
+                                                    <TableCell>Médico</TableCell>
                                                     <TableCell>Ações</TableCell>
                                                 </TableRow>
                                             </TableHead>
@@ -561,15 +625,25 @@ const ListagemClinicas = () => {
                                                 {solicitacoes && Array.isArray(solicitacoes) ? (
                                                     solicitacoes.map((solicitacao) => (
                                                         <TableRow key={solicitacao.id}>
-                                                            <TableCell>{solicitacao.id}</TableCell>
-                                                           {/*  <TableCell>{solicitacao.userId}</TableCell> */}
+                                                            <TableCell>{medicoNomes[solicitacao.medicoId] || 'Carregando...'}</TableCell>
                                                             <TableCell>
-                                                                <IconButton color="success" aria-label="Aceitar" onClick={() => handleAceitarVinculo(solicitacao)}>
-                                                                    <Check />
-                                                                </IconButton>
-                                                                <IconButton color="error" aria-label="Recusar" onClick={() => handleRecusarVinculo(solicitacao)}>
-                                                                    <Close />
-                                                                </IconButton>
+                                                                <Button
+                                                                    variant="contained"
+                                                                    color="success"
+                                                                    startIcon={<Check />}
+                                                                    onClick={() => handleAceitarVinculo(solicitacao)}
+                                                                    sx={{ mr: 1 }}
+                                                                >
+                                                                    Aceitar
+                                                                </Button>
+                                                                <Button
+                                                                    variant="contained"
+                                                                    color="error"
+                                                                    startIcon={<Close />}
+                                                                    onClick={() => handleRecusarVinculo(solicitacao)}
+                                                                >
+                                                                    Recusar
+                                                                </Button>
                                                             </TableCell>
                                                         </TableRow>
                                                     ))
@@ -589,7 +663,7 @@ const ListagemClinicas = () => {
                         </Box>
                     </Modal>
 
-                    {/* Modal de Edição */}
+                    {/* Edit Modal */}
                     <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
                         <Box
                             sx={{
@@ -615,8 +689,7 @@ const ListagemClinicas = () => {
                                         label='nomeFantasia'
                                         value={clinicaEdit.nomeFantasia}
                                         onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, nomeFantasia: e.target.value })
-                                        }
+                                            setClinicaEdit({ ...clinicaEdit, nomeFantasia: e.target.value })}
                                     />
                                     <TextField
                                         fullWidth
@@ -624,8 +697,7 @@ const ListagemClinicas = () => {
                                         label='cnpj'
                                         value={clinicaEdit.cnpj}
                                         onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, cnpj: e.target.value })
-                                        }
+                                            setClinicaEdit({ ...clinicaEdit, cnpj: e.target.value })}
                                     />
                                     <TextField
                                         fullWidth
@@ -633,8 +705,7 @@ const ListagemClinicas = () => {
                                         label='telefone'
                                         value={clinicaEdit.telefone}
                                         onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, telefone: e.target.value })
-                                        }
+                                            setClinicaEdit({ ...clinicaEdit, telefone: e.target.value })}
                                     />
                                     <TextField
                                         fullWidth
@@ -642,8 +713,7 @@ const ListagemClinicas = () => {
                                         label='horarioAbertura'
                                         value={clinicaEdit.horarioAbertura}
                                         onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, horarioAbertura: e.target.value })
-                                        }
+                                            setClinicaEdit({ ...clinicaEdit, horarioAbertura: e.target.value })}
                                     />
                                     <TextField
                                         fullWidth
@@ -651,8 +721,7 @@ const ListagemClinicas = () => {
                                         label='horarioFechamento'
                                         value={clinicaEdit.horarioFechamento}
                                         onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, horarioFechamento: e.target.value })
-                                        }
+                                            setClinicaEdit({ ...clinicaEdit, horarioFechamento: e.target.value })}
                                     />
                                     <FormControl fullWidth margin="dense">
                                         <InputLabel id="tipo-clinica-label">Tipo de Clínica</InputLabel>
@@ -675,8 +744,7 @@ const ListagemClinicas = () => {
                                         type="number"
                                         value={clinicaEdit.gerenteId}
                                         onChange={(e) =>
-                                            setClinicaEdit({ ...clinicaEdit, gerenteId: Number(e.target.value) })
-                                        }
+                                            setClinicaEdit({ ...clinicaEdit, gerenteId: Number(e.target.value) })}
                                     />
 
                                 </>
@@ -698,7 +766,7 @@ const ListagemClinicas = () => {
                         </Box>
                     </Modal>
 
-                    {/* Modal de Exclusão */}
+                    {/* Delete Modal */}
                     <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
                         <Box
                             sx={{
@@ -732,6 +800,8 @@ const ListagemClinicas = () => {
                             </Box>
                         </Box>
                     </Modal>
+
+                    {/* Add Modal */}
                     <Modal open={openAdd} onClose={handleCloseAddModal}>
                         <Box
                             sx={{
@@ -800,7 +870,7 @@ const ListagemClinicas = () => {
                                     ))}
                                 </Select>
                             </FormControl>
-                            
+
                             <TextField
                                 fullWidth
                                 margin='dense'
@@ -826,6 +896,17 @@ const ListagemClinicas = () => {
                             </Box>
                         </Box>
                     </Modal>
+
+                    {/* Snackbar */}
+                    <Snackbar
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={handleCloseSnackbar}
+                    >
+                        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                            {snackbarMessage}
+                        </Alert>
+                    </Snackbar>
                 </>
             </>
         </DashboardCard>
