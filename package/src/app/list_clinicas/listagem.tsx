@@ -134,7 +134,9 @@ const ListagemClinicas = () => {
             )
                 .then((response) => {
                     if (!response.ok) {
-                        throw new Error('Erro ao atualizar clínica.');
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Erro ao atualizar clínica.');
+                        });
                     }
                     return response.json();
                 })
@@ -149,7 +151,7 @@ const ListagemClinicas = () => {
                 })
                 .catch((error) => {
                     console.error('Erro ao atualizar clinica:', error);
-                    showSnackbar('Erro ao atualizar clínica.', 'error');
+                    showSnackbar(error.message || 'Erro ao atualizar clínica.', 'error');
                 });
         }
     };
@@ -164,7 +166,9 @@ const ListagemClinicas = () => {
             )
                 .then((response) => {
                     if (!response.ok) {
-                        throw new Error('Erro ao excluir clínica.');
+                         return response.json().then(err => {
+                            throw new Error(err.message || 'Erro ao excluir clínica.');
+                        });
                     }
                 })
                 .then(() => {
@@ -174,7 +178,7 @@ const ListagemClinicas = () => {
                 })
                 .catch((error) => {
                     console.error('Erro ao excluir clinica:', error);
-                    showSnackbar('Erro ao excluir clínica.', 'error');
+                    showSnackbar(error.message || 'Erro ao excluir clínica.', 'error');
                 });
         }
     };
@@ -218,9 +222,11 @@ const ListagemClinicas = () => {
             body: JSON.stringify(newClinica),
         })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erro ao adicionar clínica.');
-                }
+                 if (!response.ok) {
+                      return response.json().then(err => {
+                            throw new Error(err.message || 'Erro ao adicionar clínica.');
+                        });
+                    }
                 return response.json();
             })
             .then(data => {
@@ -230,7 +236,7 @@ const ListagemClinicas = () => {
             })
             .catch(error => {
                 console.error('Erro ao adicionar clínica:', error);
-                showSnackbar('Erro ao adicionar clínica.', 'error');
+                showSnackbar(error.message || 'Erro ao adicionar clínica.', 'error');
             });
     };
 
@@ -296,7 +302,9 @@ const ListagemClinicas = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Erro ao aceitar vínculo');
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Erro ao aceitar vínculo');
+                });
             }
 
             setSolicitacoes(prevSolicitacoes =>
@@ -305,7 +313,7 @@ const ListagemClinicas = () => {
             showSnackbar('Vínculo aceito com sucesso!', 'success');
         } catch (error) {
             console.error('Erro ao aceitar vínculo:', error);
-            showSnackbar('Erro ao aceitar vínculo.', 'error');
+            showSnackbar((error as any).message || 'Erro ao aceitar vínculo.', 'error');
         }
     };
 
@@ -324,7 +332,9 @@ const ListagemClinicas = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Erro ao recusar vínculo');
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Erro ao recusar vínculo');
+                });
             }
             setSolicitacoes(prevSolicitacoes =>
                 prevSolicitacoes.filter(s => s.id !== solicitacao.id)
@@ -332,7 +342,7 @@ const ListagemClinicas = () => {
             showSnackbar('Vínculo recusado com sucesso!', 'success');
         } catch (error) {
             console.error('Erro ao recusar vínculo:', error);
-            showSnackbar('Erro ao recusar vínculo.', 'error');
+            showSnackbar((error as any).message || 'Erro ao recusar vínculo.', 'error');
         }
     };
 
@@ -367,16 +377,18 @@ const ListagemClinicas = () => {
             body: JSON.stringify(requestBody),
         })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error("Erro ao solicitar vínculo")
-                }
+                 if (!response.ok) {
+                     return response.json().then(err => {
+                        throw new Error(err.message || 'Erro ao solicitar vínculo')
+                    });
+                 }
                 showSnackbar('Solicitação de vínculo enviada com sucesso!', 'success');
                 setHorarioInicio('');
                 setHorarioTermino('');
             })
             .catch(error => {
                 console.error("Erro ao solicitar vínculo:", error)
-                showSnackbar('Erro ao solicitar vínculo.', 'error');
+                showSnackbar(error.message || 'Erro ao solicitar vínculo.', 'error');
             })
     }
 
@@ -711,17 +723,25 @@ const ListagemClinicas = () => {
                                         fullWidth
                                         margin='dense'
                                         label='horarioAbertura'
+                                        type="time"
                                         value={clinicaEdit.horarioAbertura}
                                         onChange={(e) =>
                                             setClinicaEdit({ ...clinicaEdit, horarioAbertura: e.target.value })}
+                                        inputProps={{
+                                            step: 60,
+                                        }}
                                     />
                                     <TextField
                                         fullWidth
                                         margin='dense'
                                         label='horarioFechamento'
+                                        type="time"
                                         value={clinicaEdit.horarioFechamento}
                                         onChange={(e) =>
                                             setClinicaEdit({ ...clinicaEdit, horarioFechamento: e.target.value })}
+                                        inputProps={{
+                                            step: 60,
+                                        }}
                                     />
                                     <FormControl fullWidth margin="dense">
                                         <InputLabel id="tipo-clinica-label">Tipo de Clínica</InputLabel>
@@ -845,15 +865,23 @@ const ListagemClinicas = () => {
                                 fullWidth
                                 margin='dense'
                                 label='Horário Abertura'
+                                type="time"
                                 value={newClinica.horarioAbertura}
                                 onChange={(e) => setNewClinica({ ...newClinica, horarioAbertura: e.target.value })}
+                                inputProps={{
+                                    step: 60,
+                                }}
                             />
                             <TextField
                                 fullWidth
                                 margin='dense'
                                 label='Horário Fechamento'
+                                type="time"
                                 value={newClinica.horarioFechamento}
                                 onChange={(e) => setNewClinica({ ...newClinica, horarioFechamento: e.target.value })}
+                                inputProps={{
+                                    step: 60,
+                                }}
                             />
 
                             <FormControl fullWidth margin="dense">

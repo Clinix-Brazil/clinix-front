@@ -4,7 +4,9 @@ const BASE_URL = 'http://localhost:';
 const PORT_USER = '8080'; // Porta Usuario
 const PORT_CLINIC = '8081'; // Porta Clinica
 const PORT_SCHEDULING = '8082'; // Porta Agendamento
+const PORT_RABBITMQ = '8084'; // Porta RabbitMQ
 const USERS_PATH = '/clinixSistemaUsuarios'; //Nome do serviço de usuários
+const RABBITMQ_PATH = '/clinix_brazil_requisicoes'; //Nome do serviço de fila
 const SCHEDULING_PATH = '/clinix-scheduling-service'; //Nome do serviço de agendamento
 const CLINIC_PATH = '/clinixServiceClinica'; //Nome do serviço de clinica
 
@@ -15,6 +17,7 @@ export const DELETE_USUARIO = (id: number) => `${BASE_URL}${USERS_PATH}${PORT_US
 export const BUSCAR_USUARIO = (id: number) => `${BASE_URL}${USERS_PATH}${PORT_USER}/usuario/buscar/${id}`; // TODO: Implementar no back-end.
 
 export const CREATE_PACIENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/save`;
+export const CREATE_PACIENTE_FILA = () => `${BASE_URL}${PORT_RABBITMQ}${RABBITMQ_PATH}/mensageria/enviar`
 export const LIST_PACIENTE = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/list`;
 export const UPDATE_PACIENTE = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/${id}`;
 export const DELETE_PACIENTE = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PATH}/paciente/${id}`;
@@ -33,7 +36,7 @@ export const DELETE_GERENTE = (id: number) => `${BASE_URL}${PORT_USER}${USERS_PA
 
 //Clinicas
 export const CREATE_CLINICA = () => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/clinicas`;
-export const LIST_CLINICA = () => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/clinicas`;
+export const LIST_CLINICA = () => `${BASE_URL}${PORT_CLINIC}${CLINIC_PATH}/clinicas`;
 export const UPDATE_CLINICA = (id: number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/clinicas/${id}`;
 export const DELETE_CLINICA = (id: number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/clinicas/${id}`;
 export const BUSCAR_CLINICA = (id: number) => `${BASE_URL + PORT_CLINIC + CLINIC_PATH}/clinicas/${id}`;
@@ -51,7 +54,7 @@ export const DESVINCULAR_CLINICA = (c_id:number, m_id:number) => `${BASE_URL + P
 //Agendamentos
 export const CREATE_AGENDAMENTO = () => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/save`;
 export const LIST_AGENDAMENTO = () => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/list`;
-export const UPDATE_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/atualizar/${id}`;
+export const UPDATE_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/${id}`;
 export const DELETE_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/deletar/${id}+`;
 export const BUSCAR_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/buscar/${id}`;
 
