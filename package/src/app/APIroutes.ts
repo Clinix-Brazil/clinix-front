@@ -55,7 +55,7 @@ export const DESVINCULAR_CLINICA = (c_id:number, m_id:number) => `${BASE_URL + P
 export const CREATE_AGENDAMENTO = () => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/save`;
 export const LIST_AGENDAMENTO = () => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/list`;
 export const UPDATE_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/${id}`;
-export const DELETE_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/deletar/${id}+`;
+export const DELETE_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/${id}`;
 export const BUSCAR_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING + SCHEDULING_PATH}/appointment/buscar/${id}`;
 
 //Especialidades médicas
