@@ -4,6 +4,7 @@ import CustomTextField from '@/app/(DashboardLayout)/components/forms/theme-elem
 import { Stack, styled } from '@mui/system';
 import {
     CREATE_PACIENTE,
+    CREATE_PACIENTE_FILA,
     CREATE_MEDICO,
     CREATE_GERENTE, LIST_ESPECIALIDADES
 } from "@/app/APIroutes";
@@ -170,7 +171,7 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
 
         switch (role) {
             case 'paciente':
-                createSpecificUrl = CREATE_PACIENTE();
+                createSpecificUrl = CREATE_PACIENTE_FILA();
                 break;
             case 'medico':
                 createSpecificUrl = CREATE_MEDICO();
@@ -190,6 +191,7 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
         }
 
         try {
+            console.log(usuarioData, specificData)
             const response = await fetch(createSpecificUrl, {
                 method: 'POST',
                 headers: {

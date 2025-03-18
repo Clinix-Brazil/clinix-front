@@ -49,9 +49,12 @@ export interface HorarioAtendimento {
 
 export interface Consulta {
     id: number;
+    doctorId: number;
     doctorName: string;
     dateTime: string;
+    patientId: number;
     patientName: string;
+    clinicId: number;
     clinicName: string;
     status: string;
 }
@@ -65,4 +68,16 @@ export interface Clinica {
     telefone: string;
     horarioAbertura: string;
     horarioFechamento: string;
+    medicos: number[];
+    gerentes: number[];
+    pacientes: number[];
+}
+
+export interface Solicitacao {
+    id: number,
+    aprovado: boolean,
+    fim_atendimento: string,
+    inicio_atendimento: string,
+    medicoId: number,
+    clinicaId: number
 }

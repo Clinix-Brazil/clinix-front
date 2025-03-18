@@ -16,6 +16,7 @@ import {
     FormControl,
     InputLabel,
     styled,
+    TextFieldProps
 } from "@mui/material";
 import { Edit, Delete, AccessTime, Add } from "@mui/icons-material";
 import DashboardCard from "@/app/(DashboardLayout)//components/shared/DashboardCard";
@@ -26,7 +27,7 @@ import {
     DELETE_AGENDAMENTO,
     LIST_CLINICA,
     LIST_MEDICO,
-    LIST_PACIENTE // Adicionado
+    LIST_PACIENTE
 } from "../APIroutes";
 import { Consulta } from "../interfaces";
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
@@ -50,7 +51,7 @@ const ListagemConsultas = () => {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
     const [consultaEdit, setConsultaEdit] = useState<Consulta | null>(null);
-    const [consultaDelete, setConsultaDelete] = useState<Consulta | null>(null);
+    const [consultaDelete, setConsultaDelete] = useState<Consulta | null>(null); // Add state for delete
 
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedConsulta, setSelectedConsulta] = useState<Consulta | null>(null);
@@ -138,7 +139,7 @@ const ListagemConsultas = () => {
     };
 
     const handleEditClick = (consulta: Consulta) => {
-        setConsultaEdit(consulta);
+        setConsultaEdit({ ...consulta });
         setOpenEdit(true);
     };
 
@@ -149,28 +150,46 @@ const ListagemConsultas = () => {
 
     const handleSave = async () => {
         if (consultaEdit) {
+            if (!consultaEdit.clinicId || !consultaEdit.doctorId || !consultaEdit.patientId || !consultaEdit.dateTime || !consultaEdit.status) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            // Format the date to yyyy-MM-dd HH:mm:ss format, adapt timezone if needed
+            const formattedDateTime = format(new Date(consultaEdit.dateTime), "yyyy-MM-dd HH:mm:ss", { locale: ptBR });
+
+            const updatedConsulta = {
+                ...consultaEdit,
+                dateTime: formattedDateTime, // Keep formatted date
+            };
+
             try {
+                console.log("Dados para atualização:", updatedConsulta);
                 const response = await fetch(UPDATE_AGENDAMENTO(consultaEdit.id),
                     {
                         method: "PUT",
                         headers: {
                             "Content-Type": "application/json",
                         },
-                        body: JSON.stringify(consultaEdit),
+                        body: JSON.stringify(updatedConsulta),
                     }
                 );
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
                 }
-                const updatedConsulta = await response.json();
+                const updatedConsultaResponse = await response.json();
+
                 setConsultas(
                     consultas.map((p) =>
-                        p.id === updatedConsulta.id ? updatedConsulta : p
+                        p.id === updatedConsultaResponse.id ? updatedConsultaResponse : p
                     )
                 );
                 setOpenEdit(false);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Erro ao atualizar Consulta:", error);
+                alert(`Erro ao atualizar consulta: ${error.message}`);
+
             }
         }
     };
@@ -220,7 +239,7 @@ const ListagemConsultas = () => {
             doctorId: parseInt(selectedMedico), // doctorId is a number
             patientId: parseInt(selectedPaciente), //  Adicionado
             dateTime: formattedDateTime, // dateTime is a string in "yyyy-MM-dd HH:mm:ss" format
-            status: "PENDING"  // Must match one of the enum values
+            status: "PENDENTE"  // Must match one of the enum values
         };
 
         try {
@@ -245,6 +264,12 @@ const ListagemConsultas = () => {
             console.error(error);
             alert(`Erro ao criar consulta: ${error.message}`);
         }
+    };
+
+    // Função para abrir o modal de exclusão e já preencher com os dados
+    const handleOpenDelete = (consulta: Consulta) => {
+        setConsultaDelete(consulta);
+        setOpenDelete(true);
     };
 
     return (
@@ -283,14 +308,7 @@ const ListagemConsultas = () => {
                                     <TableCell>{consulta.clinicName}</TableCell>
                                     <TableCell>{consulta.status}</TableCell>
                                     <TableCell align="right">
-                                        <IconButton
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleOpenDetails(consulta);
-                                            }}
-                                            color="secondary">
-                                            <AccessTime />
-                                        </IconButton>
+                                        
 
                                         <IconButton
                                             onClick={(e) => {
@@ -304,7 +322,7 @@ const ListagemConsultas = () => {
                                         <IconButton
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDeleteClick(consulta);
+                                                handleOpenDelete(consulta); // Usar a nova função
                                             }}
                                             color="error"
                                         >
@@ -452,7 +470,7 @@ const ListagemConsultas = () => {
                             top: "50%",
                             left: "50%",
                             transform: "translate(-50%, -50%)",
-                            width: 300,
+                            width: 400,
                             bgcolor: "background.paper",
                             boxShadow: 24,
                             p: 4,
@@ -464,31 +482,103 @@ const ListagemConsultas = () => {
                         </Typography>
                         {consultaEdit && (
                             <>
-                                <TextField
-                                    fullWidth
-                                    margin="dense"
-                                    label="Nome do Médico"
-                                    value={consultaEdit.doctorName}
-                                    onChange={(e) =>
-                                        setConsultaEdit({
-                                            ...consultaEdit,
-                                            doctorName: e.target.value,
-                                        })
-                                    }
-                                />
+                                <FormControl fullWidth margin="dense">
+                                    <InputLabel id="edit-clinica-select-label">Clínica</InputLabel>
+                                    <Select
+                                        labelId="edit-clinica-select-label"
+                                        id="edit-clinica-select"
+                                        value={consultaEdit.clinicId?.toString() || ''}
+                                        label="Clínica"
+                                        onChange={(e) =>
+                                            setConsultaEdit({
+                                                ...consultaEdit,
+                                                clinicId: parseInt(e.target.value as string),
+                                            })
+                                        }
+                                    >
+                                        {clinicas.map((clinica) => (
+                                            <MenuItem key={clinica.id} value={clinica.id}>{clinica.nome}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
 
-                                <TextField
-                                    fullWidth
-                                    margin="dense"
-                                    label="Nome do Paciente"
-                                    value={consultaEdit.patientName}
-                                    onChange={(e) =>
-                                        setConsultaEdit({
-                                            ...consultaEdit,
-                                            patientName: e.target.value,
-                                        })
-                                    }
-                                />
+                                <FormControl fullWidth margin="dense">
+                                    <InputLabel id="edit-medico-select-label">Médico</InputLabel>
+                                    <Select
+                                        labelId="edit-medico-select-label"
+                                        id="edit-medico-select"
+                                        value={consultaEdit.doctorId?.toString() || ''}
+                                        label="Médico"
+                                        onChange={(e) =>
+                                            setConsultaEdit({
+                                                ...consultaEdit,
+                                                doctorId: parseInt(e.target.value as string),
+                                            })
+                                        }
+                                    >
+                                        {medicos.map((medico) => (
+                                            <MenuItem key={medico.id} value={medico.id}>{medico.nome}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+
+                                 <FormControl fullWidth margin="dense">
+                                    <InputLabel id="edit-paciente-select-label">Paciente</InputLabel>
+                                    <Select
+                                        labelId="edit-paciente-select-label"
+                                        id="edit-paciente-select"
+                                        value={consultaEdit.patientId?.toString() || ''}
+                                        label="Paciente"
+                                        onChange={(e) =>
+                                            setConsultaEdit({
+                                                ...consultaEdit,
+                                                patientId: parseInt(e.target.value as string),
+                                            })
+                                        }
+                                    >
+                                        {pacientes.map((paciente) => (
+                                            <MenuItem key={paciente.id} value={paciente.id}>{paciente.nome}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+
+                                <FormControl fullWidth margin="dense">
+                                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                        <DateTimePicker
+                                            label="Data e Hora"
+                                            value={consultaEdit.dateTime ? new Date(consultaEdit.dateTime) : null}
+                                            onChange={(newValue) => {
+                                                if (newValue) {
+                                                    setConsultaEdit((prevConsultaEdit) => ({
+                                                        ...prevConsultaEdit,
+                                                        dateTime: newValue.toISOString(),
+                                                    }));
+                                                }
+                                            }}
+                                            renderInput={(params: TextFieldProps) => <TextField {...params} />}
+                                        />
+                                    </LocalizationProvider>
+                                </FormControl>
+
+                                <FormControl fullWidth margin="dense">
+                                    <InputLabel id="edit-status-select-label">Status</InputLabel>
+                                    <Select
+                                        labelId="edit-status-select-label"
+                                        id="edit-status-select"
+                                        value={consultaEdit.status || ''}
+                                        label="Status"
+                                        onChange={(e) =>
+                                            setConsultaEdit({
+                                                ...consultaEdit,
+                                                status: e.target.value as string,
+                                            })
+                                        }
+                                    >
+                                        <MenuItem value="PENDENTE">Pendente</MenuItem>
+                                        <MenuItem value="CONCLUIDO">Concluído</MenuItem>
+                                        <MenuItem value="CANCELADO">Cancelado</MenuItem>
+                                    </Select>
+                                </FormControl>
                             </>
                         )}
                         <Box
@@ -526,6 +616,19 @@ const ListagemConsultas = () => {
                         <Typography variant="h6" gutterBottom>
                             Deseja realmente excluir? <br></br> Esta ação não pode ser desfeita.
                         </Typography>
+                        {consultaDelete && (
+                            <>
+                                <Typography variant="subtitle1">
+                                    Médico: {consultaDelete.doctorName}
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                    Horário: {consultaDelete.dateTime}
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                    Paciente: {consultaDelete.patientName}
+                                </Typography>
+                            </>
+                        )}
                         <Box
                             sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}
                         >
