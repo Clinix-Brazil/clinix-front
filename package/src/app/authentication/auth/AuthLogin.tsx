@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation"
 import Cookies from 'js-cookie';
 
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
+import {VALIDACAO_LOGIN} from "@/app/APIroutes";
 
 interface loginType {
   title?: string;
@@ -31,7 +32,7 @@ const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault(); // Evita o recarregamento da página ao enviar o formulário
 
   try {
-    const response = await axios.post("http://localhost:8084/clinix_brazil_requisicoes/login/validacao", {
+    const response = await axios.post(VALIDACAO_LOGIN(), {
       username,
       password,
     });

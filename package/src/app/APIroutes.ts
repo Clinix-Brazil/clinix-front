@@ -57,3 +57,6 @@ export const BUSCAR_AGENDAMENTO = (id: number) => `${BASE_URL +  PORT_SCHEDULING
 
 //Especialidades médicas
 export const LIST_ESPECIALIDADES = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/medico/especialidades`;
+
+//Login
+export const VALIDACAO_LOGIN = () => `${BASE_URL}${PORT_USER}${USERS_PATH}/login/validacao`;
