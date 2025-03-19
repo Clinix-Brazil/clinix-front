@@ -9,8 +9,9 @@ import {
 } from "@/app/APIroutes";
 import CustomRadioGroup from './CustomRadioGroup';
 import SnackbarAlert from './SnackbarAlert';
-
 import { validateName, validateUsername, validateEmail, validatePassword, validateCPF, validateRG, validateCRM, formatNumber } from './validations'
+
+import {router} from "next/client";
 
 interface AuthRegisterProps {
     title?: string;
@@ -52,6 +53,8 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success');
+
+    //const router = useRouter();
 
     const handleRoleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setRole(event.target.value);
@@ -205,17 +208,19 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
                 throw new Error(errorData.message || "Erro ao cadastrar perfil específico");
             }
 
-            // Exibir mensagem de sucesso
-            setSnackbarMessage("Usuário cadastrado com sucesso!");
+            setSnackbarMessage("Usuário cadastrado com sucesso! Por favor, faça o login.");
             setSnackbarSeverity("success");
             setOpenSnackbar(true);
+            setTimeout(() => {
+                router.push("/AuthLogin");
+            }, 4000);
+
         } catch (error: any) {
             console.error(error);
             setSnackbarMessage(`Erro ao cadastrar usuário: ${error.message}`);
             setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
-
     };
 
     return (
