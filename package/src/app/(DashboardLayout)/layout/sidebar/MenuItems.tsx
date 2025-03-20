@@ -6,6 +6,13 @@ import {
   IconMoodHappy,
   IconUser,
   IconUserPlus,
+  IconHeart,       // Pacientes
+  IconStethoscope, // Médicos
+  IconBuildingHospital, // Clínicas
+  IconCalendarEvent, // Consultas
+  IconShieldCheck,  // Gerentes (ou use IconUsers se preferir)
+  IconUsers,       // Icone alternativo para Gerentes
+  IconChartBar
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -26,40 +33,40 @@ const Menuitems = [
     navlabel: true,
     subheader: "Recursos",
   },
-  {
-    id: uniqueId(),
-    title: "Relatórios",
-    icon: IconCopy,
-    href: "/utilities/shadow",
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: "Relatórios",
+  //   icon: IconChartBar,
+  //   href: "/utilities/shadow",
+  // },
   {
     id: uniqueId(),
     title: "Pacientes",
-    icon: IconAperture,
+    icon: IconHeart,
     href: "/list_pacientes",
   },
   {
     id: uniqueId(),
     title: "Clinicas",
-    icon: IconAperture,
+    icon: IconBuildingHospital,
     href: "/list_clinicas",
   },
   {
     id: uniqueId(),
     title: "Médicos",
-    icon: IconAperture,
+    icon: IconStethoscope,
     href: "/list_medicos",
   },
   {
     id: uniqueId(),
     title: "Gerentes",
-    icon: IconAperture,
+    icon: IconUsers, // Ou IconUsers
     href: "/gerentes",
   },
   {
     id: uniqueId(),
     title: "Consultas",
-    icon: IconAperture,
+    icon: IconCalendarEvent,
     href: "/list_consultas",
   },
   // {
