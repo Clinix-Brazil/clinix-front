@@ -4,15 +4,15 @@ import CustomTextField from '@/app/(DashboardLayout)/components/forms/theme-elem
 import { Stack, styled } from '@mui/system';
 import {
     CREATE_PACIENTE,
-    CREATE_PACIENTE_FILA,
     CREATE_MEDICO,
-    CREATE_GERENTE, LIST_ESPECIALIDADES
+    CREATE_GERENTE,
+    LIST_ESPECIALIDADES
 } from "@/app/APIroutes";
 import CustomRadioGroup from './CustomRadioGroup';
 import SnackbarAlert from './SnackbarAlert';
 import { validateName, validateUsername, validateEmail, validatePassword, validateCPF, validateRG, validateCRM, formatNumber } from './validations'
-
-import {router} from "next/client";
+import axios from 'axios'; // Importe o axios
+import { useRouter } from 'next/navigation'; // Use o useRouter do Next.js
 
 interface AuthRegisterProps {
     title?: string;
@@ -55,7 +55,7 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success');
 
-    //const router = useRouter();
+    const router = useRouter(); // Inicialize o useRouter
 
     const handleRoleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setRole(event.target.value);
@@ -173,7 +173,7 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
 
         switch (role) {
             case 'paciente':
-                createSpecificUrl = CREATE_PACIENTE_FILA();
+                createSpecificUrl = CREATE_PACIENTE();
                 break;
             case 'medico':
                 createSpecificUrl = CREATE_MEDICO();
@@ -193,33 +193,33 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
         }
 
         try {
-            console.log(usuarioData, specificData)
-            const response = await fetch(createSpecificUrl, {
-                method: "POST",
+            console.log(usuarioData, specificData);
+            const combinedData = { ...usuarioData, ...specificData };
+
+            const response = await axios.post(createSpecificUrl, combinedData, {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ ...usuarioData, ...specificData }),
+                withCredentials: true, // Envie cookies com a requisição (se necessário)
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                setSnackbarMessage(errorData.message || "Erro ao cadastrar perfil específico");
+            if (response.status !== 201) { // Verifique se o status é diferente de 201 Created
+                setSnackbarMessage(response.data.message || "Erro ao cadastrar perfil específico");
                 setSnackbarSeverity("error");
                 setOpenSnackbar(true);
-                throw new Error(errorData.message || "Erro ao cadastrar perfil específico");
+                throw new Error(response.data.message || "Erro ao cadastrar perfil específico");
             }
 
             setSnackbarMessage("Usuário cadastrado com sucesso! Por favor, faça o login.");
             setSnackbarSeverity("success");
             setOpenSnackbar(true);
             setTimeout(() => {
-                router.push("/AuthLogin");
+                router.push("/AuthLogin"); // Redirecione para a página de login
             }, 4000);
 
         } catch (error: any) {
             console.error(error);
-            setSnackbarMessage(`Erro ao cadastrar usuário: ${error.message}`);
+            setSnackbarMessage(`Erro ao cadastrar usuário: ${error.response?.data?.message || error.message}`); // Acessa a mensagem de erro corretamente
             setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
