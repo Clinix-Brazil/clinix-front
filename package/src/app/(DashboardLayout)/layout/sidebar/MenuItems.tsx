@@ -57,12 +57,12 @@ const Menuitems = [
     icon: IconStethoscope,
     href: "/list_medicos",
   },
-  {
-    id: uniqueId(),
-    title: "Gerentes",
-    icon: IconUsers, // Ou IconUsers
-    href: "/gerentes",
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: "Gerentes",
+  //   icon: IconUsers, // Ou IconUsers
+  //   href: "/gerentes",
+  // },
   {
     id: uniqueId(),
     title: "Consultas",
