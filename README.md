@@ -13,7 +13,6 @@ Clinix é um sistema de gestão de saúde e clínicas médicas, desenvolvido par
 
 O projeto Clinix é composto por seis repositórios:
 
-- **Front-end** (Next.js - TypeScript) → [Inserir Link]
 - **Módulo de Gestão de Usuários** (Spring Boot) → [Acessar](https://github.com/Clinix-Brazil/Clinix_Sistema_Usuarios)
 - **Módulo de Gestão de Clínicas** (Spring Boot) → [Acessar](https://github.com/Clinix-Brazil/Clinix_Clinica_Service)
 - **Módulo de Gestão de Agendamentos** (Spring Boot) → [Acessar](https://github.com/Clinix-Brazil/clinix-scheduling-service)
