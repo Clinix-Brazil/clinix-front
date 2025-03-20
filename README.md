@@ -2,6 +2,8 @@
 
 Clinix é um sistema de gestão de saúde e clínicas médicas, desenvolvido para atender pacientes, médicos e gestores. O sistema é uma aplicação full stack distribuída, onde o front-end é construído em **TypeScript com Next.js**, e o back-end é desenvolvido em **Java Spring Boot**, dividido em módulos distribuídos.
 
+![Preview do site](preview.png)
+
 ## Contribuidores
 
 - [Allan Amâncio](https://github.com/AllanSmithll)
