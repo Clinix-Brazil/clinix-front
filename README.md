@@ -1,34 +1,29 @@
-# <a href="https://modernize-nextjs-free.vercel.app/?ref=5">Modernize-nextjs-free</a>
-Modernize Free Next.js 14 Admin Template with Material Ui + Typescript 
-<!-- Place this tag where you want the button to render. -->
-<a class="github-button" href="https://github.com/adminmart/Modernize-Nextjs-Free" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" aria-label="Star adminmart/Modernize-Nextjs-Free on GitHub">Give a Star</a>
-<!-- Main image of Template -->
+# Clinix - Front-end
 
-  <img src="https://adminmart.com/wp-content/uploads/2023/03/modernize-free-next-js-admin-template.png" />
+Clinix é um sistema de gestão de saúde e clínicas médicas, desenvolvido para atender pacientes, médicos e gestores. O sistema é uma aplicação full stack distribuída, onde o front-end é construído em **TypeScript com Next.js**, e o back-end é desenvolvido em **Java Spring Boot**, dividido em módulos distribuídos.
 
+## 📌 Repositórios do Projeto
 
+O projeto Clinix é composto por seis repositórios:
 
-# Installation 👨🏻‍💻
+- **Front-end** (Next.js - TypeScript) → [Inserir Link]
+- **Módulo de Gestão de Usuários** (Spring Boot) → [Acessar](https://github.com/Clinix-Brazil/Clinix_Sistema_Usuarios)
+- **Módulo de Gestão de Clínicas** (Spring Boot) → [Acessar](https://github.com/Clinix-Brazil/Clinix_Clinica_Service)
+- **Módulo de Gestão de Agendamentos** (Spring Boot) → [Acessar](https://github.com/Clinix-Brazil/clinix-scheduling-service)
+- **Common Services** (Serviços compartilhados via RMI) → [Acessar](https://github.com/Clinix-Brazil/clinix-common-service)
+- **Mensageria** (RabbitMQ) → [Acessar](https://github.com/Clinix-Brazil/clinix_requisicoes)
 
-> We recommend you use npm
+## 🚀 Tecnologias Utilizadas
 
-1. Install all packages
+### Front-end:
+- Next.js (React)
+- TypeScript
+- Axios (Requisições HTTP)
 
-```
-npm i
-```
-
-2. Run Development Server
-
-```
-npm run dev
-```
-
-3. Build your project
-
-```
-npm run build
-```
-
-
-
+### Back-end:
+- Spring Boot (Java)
+- PostgreSQL
+- RabbitMQ (Mensageria)
+- Spring Security (Autenticação e Autorização)
+- Docker (Containerização)
+- Redis (cache)
