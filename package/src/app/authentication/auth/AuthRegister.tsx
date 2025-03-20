@@ -33,7 +33,7 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
     const [senha, setSenha] = useState<string>('');
     const [cpf, setCpf] = useState<string>('');
     const [rg, setRg] = useState<string>('');
-    const [role, setRole] = useState<string>('paciente');
+    const [role, setRole] = useState<'paciente' | 'medico' | 'gerente'>('paciente');
     const [crm, setCrm] = useState<string>('');
     const [inicioAtendimento, setInicioAtendimento] = useState<string>('');
     const [fimAtendimento, setFimAtendimento] = useState<string>('');
@@ -58,7 +58,7 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
     const router = useRouter(); // Inicialize o useRouter
 
     const handleRoleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setRole(event.target.value);
+        setRole(event.target.value as 'paciente' | 'medico' | 'gerente');
         setCpf('');
         setRg('');
         setCrm('');
@@ -165,7 +165,8 @@ const AuthRegister: React.FC<AuthRegisterProps> = ({ title, subtitle, subtext })
             cpf: cpf,
             rg: rg,
             enabled: true,
-            dataCadastro: new Date().toISOString()
+            dataCadastro: new Date().toISOString(),
+            role: role,
         };
 
         let specificData = {};
